@@ -1,23 +1,21 @@
 <template>
-  <div id="app">
-    <img src="./assets/logo.png">
-    <router-view/>
+  <div>
+    <!--头部组件-->
+    <my-header-comp></my-header-comp>
   </div>
 </template>
 
 <script>
+//引入头部组件和footer组件
+import MyHeaderComp from './components/HeaderComp'
 export default {
-  name: 'app'
+  name: 'app',
+  components:{
+    MyHeaderComp
+  }
 }
 </script>
 
-<style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+<style scoped>
+
 </style>
