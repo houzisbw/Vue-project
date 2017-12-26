@@ -1,14 +1,17 @@
 <template>
-    <div class="book-mark">
-      <div class="title">
-        所有书签
+    <div class="book-mark" id="title-top">
+      <div class="title" >
+        所有书签,一共110个
       </div>
       <!--书签内容区域-->
       <div class="book-mark-content clearfix">
         <!--每一行标签数是响应式变化的-->
         <div class="mark-wrap" v-for="i in markNum">
+          <!--书签标题-->
+          <div class="mark-title">
+          </div>
         </div>
-        <!--空div，用于让flex最后一行左对齐，原理就是占位置,宽度和mark-wrap一样-->
+        <!--空div，用于让flex最后一行左对齐，原理就是占位置,宽度和mark-wrap一样,个数要为每行最多数-1-->
         <div class="flex-padding">
         </div>
         <div class="flex-padding">
@@ -22,6 +25,12 @@
         <div class="flex-padding">
         </div>
       </div>
+      <!--用于让底部和内容隔开一定距离-->
+      <div class="bottom-padding">
+      </div>
+      <!--返回顶部-->
+      <a class="to-top" @click="goTop()">
+      </a>
     </div>
 </template>
 
@@ -30,7 +39,14 @@
         name: 'book-mark',
         data(){
             return{
-                markNum:22
+                markNum:39
+            }
+        },
+        methods:{
+            //回到页面顶端
+            goTop:function(){
+                //是right-content外层的scrollTop,如果用锚点的话会对路由有影响，不能用
+                document.querySelector('.right-content').scrollTop = 0;
             }
         }
     }
@@ -65,10 +81,11 @@
       flex-wrap:wrap;
     }
   }
+  //占位布局,让书签最后一行左对齐
   .flex-padding{
     height:0;
     float:left;
-    width:15%;
+    width:@markWidth;
   }
   @markWidth:15%;
   @markHeight:250px;
@@ -79,9 +96,40 @@
     -webkit-box-sizing: border-box;
     width:@markWidth;
     height:@markHeight;
-    background-color: #898989;
+    background-color: #fff;
     float:left;
     margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px 2px #d3d3d3;
+    position: relative;
+    //这里也要写top才有用
+    top:0;
+    transition: all .5s ease;
+    &:hover{
+      top:-10px;
+      box-shadow: 0 0 10px 5px #b5b5b5;
+    }
+  }
+  .bottom-padding{
+    height:100px;
+    width:100%;
+  }
+  .to-top{
+    cursor: pointer;
+    display: inline-block;
+    width:50px;
+    height:50px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px 2px #d3d3d3;
+    position: fixed;
+    right:50px;
+    bottom:40px;
+    background: url('./../assets/icon/toTop.png') center center #fff no-repeat;
+    background-size: 40px 40px;
+  }
+  .mark-title{
+    height:40px;
+    border-bottom: 1px solid #cbcbcb;
   }
 
   //响应式，媒体查询

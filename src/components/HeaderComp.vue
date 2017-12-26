@@ -1,20 +1,54 @@
 <!--Header组件-->
 <template>
+  <div>
       <div class="banner">
         <a href="#"><img src="./../assets/icon/banner-logo.png"></a>
         <span class="banner-word"><img src="./../assets/icon/banner-word.png"></span>
         <ul class="banner-ul">
           <li><a href="#">登录</a></li>
-          <li><a href="#">注册</a></li>
+          <li><a href="#" @click="showRegister">注册</a></li>
         </ul>
         <input type="text" class="banner-input" placeholder="组件名字">
       </div>
+      <!--对话框模态框,遮罩也在里面-->
+      <modal-dialog v-on:on-close="closeDialog" v-show="isDialogClose"></modal-dialog>
+      <!--注册模态框-->
+      <register-dialog  :regShow="isRegisterClose" v-on:on-close="closeDialog" ></register-dialog>
+
+
+
+  </div>
 </template>
 
 <script>
+    import ModalDialog from '@/components/ModalDialog'
+    import RegisterDialog from '@/components/Register'
     export default {
         //这里命名不要和built-in的tag名相同
-        name: 'headerComp'
+        name: 'headerComp',
+        components:{
+          ModalDialog,
+          RegisterDialog
+        },
+        data(){
+            return {
+                //对话框关闭与否
+                isDialogClose:false,
+                isRegisterClose:false
+            }
+        },
+        methods:{
+            //关闭所有对话框
+            closeDialog(){
+                this.isDialogClose = false;
+                this.isRegisterClose = false;
+            },
+            //弹出注册对话框
+            showRegister(){
+                this.isRegisterClose = true;
+            }
+
+        }
     }
 </script>
 
@@ -88,4 +122,19 @@
     }
 
   }
+
+  //动画过渡
+  .slide-enter,.slide-leave-to{
+    //注意这里不能写成-100px，因为这是绝对值，不是相对于原来运动,所以要在原来的基础上加
+    transform: translate(-50%,-60%);
+    opacity: 0;
+  }
+  .slide-enter-active,.slide-leave-active{
+    transition: all .5s ease;
+  }
+  .slide-enter-to,.slide-leave{
+    opacity: 1;
+    transform: translate(-50%,-50%);
+  }
+
 </style>
