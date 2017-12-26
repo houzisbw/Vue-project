@@ -39,7 +39,7 @@
                     subMenu:[
                       {
                           menuName:'添加书签',
-                          menuLink:'/a'
+                          menuLink:'/book'
                       },
                       {
                           menuName:'查看书签',
