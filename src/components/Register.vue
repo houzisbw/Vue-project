@@ -19,7 +19,7 @@
               <div class="line-wrap clearfix">
                 <span class="word-wrap"><span class="required">*</span><span class="line-word">邮箱</span></span>
                 <!--:class="email === '' ? '' : (isEmailValid ? 'valid-input' : 'invalid-input')"-->
-                <!--这里的2个class分别表示填写正确(绿色)，填写错误(红色)，因为初始化的时候(灰色)不能出现这2个class,有3种状态-->
+                <!--这里的2个class分别表示填写正确(绿色)，填写错误(红色)，因为初始化的时候(灰色)不能出现这2个class,有3种状态,用status 0,1,2表示-->
                 <input  spellcheck="false"
                         type="text"
                         placeholder="请输入邮箱" id="email-input"
@@ -90,7 +90,7 @@
             <div class="confirm">
               <!--确定取消-->
               <div class="yesno">
-                <div class="yesno-yes" @click="checkInfoAndRegister">
+                <div class="yesno-yes" @click="checkInfoAndRegister" :class="{'reg-button-disable':buttonDisabled}">
                   注册
                 </div>
                 <div class="yesno-no" @click="closeDialog">
@@ -107,6 +107,10 @@
 <script>
     //引入通信中转站
     import {eventBus} from './../eventBus'
+    //引入提示框，提示登录成功
+    import ModalDialog from './ModalDialog'
+    //引入axios
+    import axios from 'axios'
     export default {
         name: 'register',
         props: {
@@ -126,6 +130,8 @@
 
         data(){
             return {
+            	  //提交注册信息后按钮禁用
+            	  buttonDisabled:false,
                 //3种input状态，对应3个class，0表示初始状态，1正确，2错误
                 emailStatus:0,
                 usernameStatus:0,
@@ -156,6 +162,7 @@
             }
         },
         computed:{
+
             //验证码是否正确
             isVerifyCodeValid:function(){
                 var valideCode = this.codeDigitOne.toString() +
@@ -202,7 +209,23 @@
 
         },
         methods:{
+            //重置所有内容
+            resetAllInfo(){
+              this.emailStatus = 0;
+              this.usernameStatus = 0;
+              this.passwordStatus = 0;
+              this.pwdAgainStatus = 0;
+              this.verifyStatus = 0;
+
+              this.email = '';
+              this.username = '';
+              this.password = '';
+              this.passwordAgain = '';
+              this.verifyCode = '';
+            },
             closeDialog(){
+            	  //所有填写的内容清空
+                this.resetAllInfo();
                 this.$emit('on-close');
             },
             //初始化验证码，4位数，每一位0-9
@@ -230,6 +253,9 @@
             },
             //注册按钮事件
             checkInfoAndRegister(){
+            	  if(this.buttonDisabled){
+            	  	return;
+                }
                 //全部再检查一次,调用计算属性直接this.computedAttr即可
                 this.checkEmail();
                 //为空也非法
@@ -256,9 +282,36 @@
                 //判断所有填写是否都正确
                 if(this.isEmailValid && this.isUsernameValid &&
                    this.isPasswordValid && this.isPasswordAgainSame && this.isVerifyCodeValid){
-                	alert('valid')
-                }else{
-                	alert('invalid')
+                	 //发送给后台进行注册
+                   var param = {
+                   	  email:this.email,
+                      password:this.password,
+                      username:this.username
+                   };
+                   //禁用注册按钮，返回数据后恢复
+                   this.buttonDisabled = true;
+                   axios.post('/user/register',param).then((resp)=>{
+                        this.buttonDisabled = false;
+                        //获取后端传来的状态
+                        //注意，后端返回的json在resp.data中，而不是resp
+                        //所有填写的内容清空
+                        this.resetAllInfo();
+                        let status = resp.data.status;
+                        if(status === -1){
+                        	//保存出错
+                          this.$emit('on-close');
+                          eventBus.$emit('userSaveFailed-error');
+                        }else if(status === 0 ){
+                        	//用户已经存在
+                          this.$emit('on-close');
+                        	eventBus.$emit('userSaveFailed-alreadyExists');
+                        }else {
+                        	//注册成功
+                          this.$emit('on-close');
+                          eventBus.$emit('userSaveSuccessful');
+                        }
+
+                   })
                 }
 
             },
@@ -322,7 +375,7 @@
     }
 </script>
 
-<style lang="less" type="text/less">
+<style lang="less" type="text/less" scoped>
   //遮罩
   @overlayIndex:1000;
   .overlay{
@@ -383,6 +436,11 @@
       color:#fff;
       line-height: 40px;
       text-align: center;
+    }
+    //按钮禁用，通过透明度来
+    .reg-button-disable{
+      opacity: 0.5;
+      cursor:not-allowed;
     }
     .yesno-no{
       font-family: "Microsoft YaHei";

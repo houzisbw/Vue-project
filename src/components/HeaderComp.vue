@@ -5,16 +5,25 @@
         <a href="#"><img src="./../assets/icon/banner-logo.png"></a>
         <span class="banner-word"><img src="./../assets/icon/banner-word.png"></span>
         <ul class="banner-ul">
-          <li><a href="#">登录</a></li>
+          <li><a href="#" @click="showLogin">登录</a></li>
           <!--这里点击注册要弹出框，并初始化验证码，得调用注册组件的方法-->
           <li><a href="#" @click="showRegister">注册</a></li>
         </ul>
         <input type="text" class="banner-input" placeholder="组件名字">
       </div>
       <!--对话框模态框,遮罩也在里面-->
-      <modal-dialog v-on:on-close="closeDialog" v-show="isDialogClose"></modal-dialog>
+      <modal-dialog v-on:on-close="closeDialog"
+                    v-show="isDialogClose"
+                    :title="modalDialogTitle"
+                    :content="modalDialogContent">
+      </modal-dialog>
       <!--注册模态框-->
-      <register-dialog  :regShow="isRegisterClose" v-on:on-close="closeDialog" ></register-dialog>
+      <register-dialog :regShow="isRegisterClose"
+                       v-on:on-close="closeDialog">
+      </register-dialog>
+      <!--登录模态框-->
+      <login-dialog></login-dialog>
+
 
 
 
@@ -24,6 +33,7 @@
 <script>
     import ModalDialog from '@/components/ModalDialog'
     import RegisterDialog from '@/components/Register'
+    import LoginDialog from '@/components/Login'
     //引入通信中转站
     import {eventBus} from './../eventBus'
     export default {
@@ -31,13 +41,19 @@
         name: 'headerComp',
         components:{
           ModalDialog,
-          RegisterDialog
+          RegisterDialog,
+          LoginDialog
         },
         data(){
             return {
                 //对话框关闭与否
                 isDialogClose:false,
-                isRegisterClose:false
+                isRegisterClose:false,
+                isLoginClose:false,
+                //对话框标题,根据需要动态改变
+                modalDialogTitle:'',
+                modalDialogContent:'',
+                modalDialogType:0
             }
         },
         methods:{
@@ -45,14 +61,32 @@
             closeDialog(){
                 this.isDialogClose = false;
                 this.isRegisterClose = false;
+                this.isLoginClose = false;
             },
             //弹出注册对话框
             showRegister(){
                 this.isRegisterClose = true;
                 //触发注册组件的方法,参数不是组件的方法名，而是和接收方法名相同即可
                 eventBus.$emit('initVerifyCode');
+            },
+            //弹出注册对话框
+            showLogin(){
+               this.isLoginClose = true;
             }
 
+        },
+        mounted:function(){
+        	//用户注册成功,非父子组件的通信,可以使用一个空的 Vue 实例作为事件总线,写在eventBus.js里面
+          //注意这里的this必须用箭头函数才能成功，否则作用域不是VUE实例
+        	eventBus.$on('userSaveSuccessful',()=>{
+            //用户保存成功，弹出提示框
+        		this.isDialogClose = true;
+        		//提示框信息
+            this.modalDialogTitle = '注册成功';
+            this.modalDialogContent = '恭喜~您已经注册成功，点击确定进入登录页面!';
+            this.modalDialogType = 1;
+
+          })
         }
     }
 </script>
