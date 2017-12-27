@@ -6,6 +6,7 @@
         <span class="banner-word"><img src="./../assets/icon/banner-word.png"></span>
         <ul class="banner-ul">
           <li><a href="#">登录</a></li>
+          <!--这里点击注册要弹出框，并初始化验证码，得调用注册组件的方法-->
           <li><a href="#" @click="showRegister">注册</a></li>
         </ul>
         <input type="text" class="banner-input" placeholder="组件名字">
@@ -23,6 +24,8 @@
 <script>
     import ModalDialog from '@/components/ModalDialog'
     import RegisterDialog from '@/components/Register'
+    //引入通信中转站
+    import {eventBus} from './../eventBus'
     export default {
         //这里命名不要和built-in的tag名相同
         name: 'headerComp',
@@ -46,6 +49,8 @@
             //弹出注册对话框
             showRegister(){
                 this.isRegisterClose = true;
+                //触发注册组件的方法,参数不是组件的方法名，而是和接收方法名相同即可
+                eventBus.$emit('initVerifyCode');
             }
 
         }

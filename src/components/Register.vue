@@ -18,29 +18,79 @@
               <!--邮箱-->
               <div class="line-wrap clearfix">
                 <span class="word-wrap"><span class="required">*</span><span class="line-word">邮箱</span></span>
-                <input type="text" placeholder="请输入邮箱" id="email-input">
+                <!--:class="email === '' ? '' : (isEmailValid ? 'valid-input' : 'invalid-input')"-->
+                <!--这里的2个class分别表示填写正确(绿色)，填写错误(红色)，因为初始化的时候(灰色)不能出现这2个class,有3种状态-->
+                <input  spellcheck="false"
+                        type="text"
+                        placeholder="请输入邮箱" id="email-input"
+                        v-model="email"
+                        @keyup="checkEmail"
+                        :class="emailStatus === 0 ? '' : (emailStatus === 1 ? 'valid-input' : 'invalid-input')"
+                >
+                <!--提示文字-->
+                <!--<p class=""></p>-->
               </div>
               <!--用户名-->
               <div class="line-wrap clearfix">
                 <span class="word-wrap"><span class="required">*</span><span class="line-word">用户名</span></span>
-                <input type="text" placeholder="请输入用户名" id="username-input">
+                <!--这里当没有填写时不验证，提交的时候才验证,提交时全部验证一次-->
+                <input spellcheck="false"
+                       type="text"
+                       :class="usernameStatus === 0 ? '' : (usernameStatus === 1 ? 'valid-input' : 'invalid-input')"
+                       placeholder="6-16位英文大小写和数字"
+                       id="username-input"
+                       v-model="username"
+                       @keyup="checkUsername"
+                >
               </div>
               <!--密码-->
               <div class="line-wrap clearfix">
                 <span class="word-wrap"><span class="required">*</span><span class="line-word">密码</span></span>
-                <input type="password" placeholder="请输入密码" id="pwd-input">
+                <input type="password"
+                       placeholder="至少6位，同时包含大小写字母和数字"
+                       :class="passwordStatus === 0 ? '' : (passwordStatus === 1 ? 'valid-input' : 'invalid-input')"
+                       id="pwd-input" v-model="password"
+                       @keyup="checkPassword"
+                >
               </div>
               <!--确认密码-->
               <div class="line-wrap clearfix">
                 <span class="word-wrap"><span class="required">*</span><span class="line-word">确认密码</span></span>
-                <input type="password" placeholder="确认密码" id="pwd-confirm-input">
+                <input type="password"
+                       placeholder="确认密码"
+                       :class="pwdAgainStatus === 0 ? '' : (pwdAgainStatus === 1 ? 'valid-input' : 'invalid-input')"
+                       id="pwd-confirm-input"
+                       v-model="passwordAgain"
+                       @keyup="checkPwdAgain"
+                >
+              </div>
+              <!--验证码-->
+              <div class="line-wrap clearfix">
+                <span class="word-wrap"><span class="required">*</span><span class="line-word">验证码</span></span>
+                <input type="text"
+                       placeholder="请输入验证码"
+                       class="verify-code"
+                       v-model="verifyCode"
+                       :class="verifyStatus === 0 ? '' : (verifyStatus === 1 ? 'valid-input' : 'invalid-input')"
+                       @keyup="checkVerifyCode"
+                >
+                <div class="verify-code-box">
+                  <!--验证码每位的颜色不同-->
+                  <span  :style="{color:colorOne}" v-text="codeDigitOne"></span>
+                  <span  :style="{color:colorTwo}" v-text="codeDigitTwo"></span>
+                  <span  :style="{color:colorThree}" v-text="codeDigitThree"></span>
+                  <span  :style="{color:colorFour}" v-text="codeDigitFour"></span>
+                </div>
+                <!--刷新按钮-->
+                <div class="refresh-code" title="看不清?刷新验证码!" @click="initVerifyCode()">
+                </div>
               </div>
             </div>
             <!--确认取消还是确定-->
             <div class="confirm">
               <!--确定取消-->
               <div class="yesno">
-                <div class="yesno-yes">
+                <div class="yesno-yes" @click="checkInfoAndRegister">
                   注册
                 </div>
                 <div class="yesno-no" @click="closeDialog">
@@ -55,6 +105,8 @@
 </template>
 
 <script>
+    //引入通信中转站
+    import {eventBus} from './../eventBus'
     export default {
         name: 'register',
         props: {
@@ -63,10 +115,208 @@
             default:false
           }
         },
+        mounted:function(){
+            //初始化验证码,每一位随机0-9;
+            this.initVerifyCode();
+            //监听事件,其他地方触发这个事件
+            eventBus.$on('initVerifyCode',()=>{
+              this.initVerifyCode();
+          })
+        },
 
+        data(){
+            return {
+                //3种input状态，对应3个class，0表示初始状态，1正确，2错误
+                emailStatus:0,
+                usernameStatus:0,
+                passwordStatus:0,
+                pwdAgainStatus:0,
+                verifyStatus:0,
+
+                //邮箱
+                email:'',
+                //用户名
+                username:'',
+                //密码
+                password:'',
+                //重复密码
+                passwordAgain:'',
+                //验证码
+                verifyCode:'',
+                //验证码4位
+                codeDigitOne:1,
+                codeDigitTwo:2,
+                codeDigitThree:3,
+                codeDigitFour:4,
+                //验证码颜色
+                colorOne:'#000',
+                colorTwo:'#aff',
+                colorThree:'#f32d26',
+                colorFour:'#286187'
+            }
+        },
+        computed:{
+            //验证码是否正确
+            isVerifyCodeValid:function(){
+                var valideCode = this.codeDigitOne.toString() +
+                                 this.codeDigitTwo.toString() +
+                                 this.codeDigitThree.toString() +
+                                 this.codeDigitFour.toString();
+                if(valideCode === this.verifyCode){
+                    return true;
+                }
+                return false;
+            },
+            //用户名合法
+            isUsernameValid:function(){
+                //正则表达式
+                var usernameReg = /^[a-zA-Z0-9]{6,16}$/;
+                if(usernameReg.exec(this.username)) {
+                    return true;
+                }
+                return false;
+            },
+            //邮箱是否合法
+            isEmailValid:function(){
+                var emailReg = /^\w+[@]\w+[.][\w]+$/
+                if(emailReg.exec(this.email)) {
+                  return true;
+                }
+                return false;
+            },
+            //密码是否合法,至少6位，至少一个大写字母，小写字母，数字,不能有空格,\S匹配非空白字符
+            isPasswordValid:function(){
+                var pwdReg = /^\S*(?=.{6,})(?=.*\d)(?=.*[A-Z])(?=.*[a-z])\S*$/
+                if(pwdReg.exec(this.password)) {
+                  return true;
+                }
+                return false;
+            },
+            //确认密码
+            isPasswordAgainSame:function(){
+                if(this.password === this.passwordAgain){
+                    return true;
+                }
+                return false;
+            }
+
+        },
         methods:{
             closeDialog(){
                 this.$emit('on-close');
+            },
+            //初始化验证码，4位数，每一位0-9
+            initVerifyCode(){
+              this.codeDigitOne = Math.floor(Math.random()*10);
+              this.codeDigitTwo = Math.floor(Math.random()*10);
+              this.codeDigitThree = Math.floor(Math.random()*10);
+              this.codeDigitFour = Math.floor(Math.random()*10);
+              //改变颜色
+              this.colorOne = this.getRandomColor();
+              this.colorTwo = this.getRandomColor();
+              this.colorThree = this.getRandomColor();
+              this.colorFour = this.getRandomColor();
+              //这里也要验证验证码是否正确
+              this.checkVerifyCode();
+            },
+            getRandomColor(){
+              var colorArray = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+              return '#'+ colorArray[Math.floor(Math.random()*16)] +
+                colorArray[Math.floor(Math.random()*16)]+
+                colorArray[Math.floor(Math.random()*16)]+
+                colorArray[Math.floor(Math.random()*16)]+
+                colorArray[Math.floor(Math.random()*16)]+
+                colorArray[Math.floor(Math.random()*16)];
+            },
+            //注册按钮事件
+            checkInfoAndRegister(){
+                //全部再检查一次,调用计算属性直接this.computedAttr即可
+                this.checkEmail();
+                //为空也非法
+                if(this.email === ''){
+                  this.emailStatus  = 2;
+                }
+                this.checkUsername();
+                if(this.username === ''){
+                  this.usernameStatus  = 2;
+                }
+                this.checkPassword();
+                if(this.password === ''){
+                	this.passwordStatus = 2;
+                }
+                this.checkPwdAgain();
+                if(this.passwordAgain === ''){
+                	this.pwdAgainStatus = 2;
+                }
+                this.checkVerifyCode();
+                if(this.verifyCode === ''){
+                  this.verifyStatus = 2;
+                }
+
+                //判断所有填写是否都正确
+                if(this.isEmailValid && this.isUsernameValid &&
+                   this.isPasswordValid && this.isPasswordAgainSame && this.isVerifyCodeValid){
+                	alert('valid')
+                }else{
+                	alert('invalid')
+                }
+
+            },
+            //keyup事件
+            checkEmail(){
+                if(this.email === ''){
+                    this.emailStatus = 0;
+                    return;
+                }
+                if(this.isEmailValid){
+                  this.emailStatus = 1;
+                }else{
+                  this.emailStatus = 2;
+                }
+            },
+            checkUsername(){
+              if(this.username === ''){
+                this.usernameStatus = 0;
+                return;
+              }
+              if(this.isUsernameValid){
+                this.usernameStatus = 1;
+              }else{
+                this.usernameStatus = 2;
+              }
+            },
+            checkPassword(){
+                if(this.password === ''){
+                  this.passwordStatus = 0;
+                  return;
+                }
+                if(this.isPasswordValid){
+                  this.passwordStatus = 1;
+                }else{
+                  this.passwordStatus = 2;
+                }
+            },
+            checkPwdAgain(){
+                if(this.passwordAgain === ''){
+                  this.pwdAgainStatus = 0;
+                  return;
+                }
+                if(this.isPasswordAgainSame){
+                  this.pwdAgainStatus = 1;
+                }else{
+                  this.pwdAgainStatus = 2;
+                }
+            },
+            checkVerifyCode(){
+                if(this.verifyCode === ''){
+                  this.verifyStatus = 0;
+                  return;
+                }
+                if(this.isVerifyCodeValid){
+                  this.verifyStatus = 1;
+                }else{
+                  this.verifyStatus = 2;
+                }
             }
         }
     }
@@ -171,12 +421,59 @@
       height:30px;
       text-indent: 10px;
       margin-left: 4%;
-      width:75%;
+      width:67%;
+      padding-right:8%;
       float:right;
-      transition: all .5s;
+      transition: border .5s;
       &:focus{
         border:1px solid #409eff;
       }
+    }
+    .verify-code{
+      border-radius: 5px;
+      border: 1px solid #cbcbcb;
+      height:30px;
+      text-indent: 10px;
+      margin-left: 4.5%;
+      width:30%;
+      padding-right:8%;
+      float:left;
+      transition: border .5s;
+      &:focus{
+        border:1px solid #409eff;
+      }
+    }
+    .verify-code-box{
+      margin-left: 5%;
+      width:20%;
+      height:33px;
+      background-color: #a6a6a6;
+      float:left;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .refresh-code{
+      @codeSize:30px;
+      width:@codeSize;
+      height:30px;
+      //border: 1px solid #cbcbcb;
+      float:right;
+      border-radius: 5px;
+      background: url('./../assets/icon/refresh.png') center center no-repeat;
+      background-size:@codeSize @codeSize ;
+      cursor: pointer;
+    }
+    //表单填写正确错误的图片
+    .valid-input{
+      background: url('./../assets/icon/right.png') 98% center no-repeat;
+      background-size:20px 20px;
+      //不加important则优先级不够高，不会起作用
+      border:1px solid #12c212 !important;
+    }
+    .invalid-input{
+      background: url('./../assets/icon/wrong.png') 98% center no-repeat;
+      background-size:20px 20px;
+      border:1px solid #e21b10 !important;
     }
   }
   .dialog{
