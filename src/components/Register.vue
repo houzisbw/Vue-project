@@ -2,105 +2,104 @@
 <template>
     <div>
       <!--遮罩,z-index:1000-->
-      <div class="overlay" v-show="regShow" >
-        <!--对话框-->
-        <transition name="myslide">
-          <div class="dialog" v-if="regShow" >
-            <!--关闭按钮-->
-            <div class="close" @click="closeDialog">
+      <transition name="overlay-fade">
+        <div class="overlay" v-show="regShow" >
+        </div>
+      </transition>
+      <!--对话框-->
+      <transition name="myslide">
+        <div class="dialog" v-if="regShow" >
+          <!--关闭按钮-->
+          <div class="close" @click="closeDialog">
+          </div>
+          <!--标题-->
+          <div class="title">
+            注册用户
+          </div>
+          <!--内容-->
+          <div class="content">
+            <!--邮箱-->
+            <div class="line-wrap clearfix">
+              <span class="word-wrap"><span class="required">*</span><span class="line-word">邮箱</span></span>
+              <!--:class="email === '' ? '' : (isEmailValid ? 'valid-input' : 'invalid-input')"-->
+              <!--这里的2个class分别表示填写正确(绿色)，填写错误(红色)，因为初始化的时候(灰色)不能出现这2个class,有3种状态,用status 0,1,2表示-->
+              <input  spellcheck="false"
+                      type="text"
+                      placeholder="请输入邮箱" id="email-input"
+                      v-model="email"
+                      @keyup="checkEmail"
+                      :class="emailStatus === 0 ? '' : (emailStatus === 1 ? 'valid-input' : 'invalid-input')"
+              >
+              <!--提示文字-->
+              <!--<p class=""></p>-->
             </div>
-            <!--标题-->
-            <div class="title">
-              注册用户
+            <!--用户名-->
+            <div class="line-wrap clearfix">
+              <span class="word-wrap"><span class="required">*</span><span class="line-word">用户名</span></span>
+              <!--这里当没有填写时不验证，提交的时候才验证,提交时全部验证一次-->
+              <input spellcheck="false"
+                     type="text"
+                     :class="usernameStatus === 0 ? '' : (usernameStatus === 1 ? 'valid-input' : 'invalid-input')"
+                     placeholder="6-16位英文大小写和数字"
+                     id="username-input"
+                     v-model="username"
+                     @keyup="checkUsername"
+              >
             </div>
-            <!--内容-->
-            <div class="content">
-              <!--邮箱-->
-              <div class="line-wrap clearfix">
-                <span class="word-wrap"><span class="required">*</span><span class="line-word">邮箱</span></span>
-                <!--:class="email === '' ? '' : (isEmailValid ? 'valid-input' : 'invalid-input')"-->
-                <!--这里的2个class分别表示填写正确(绿色)，填写错误(红色)，因为初始化的时候(灰色)不能出现这2个class,有3种状态,用status 0,1,2表示-->
-                <input  spellcheck="false"
-                        type="text"
-                        placeholder="请输入邮箱" id="email-input"
-                        v-model="email"
-                        @keyup="checkEmail"
-                        :class="emailStatus === 0 ? '' : (emailStatus === 1 ? 'valid-input' : 'invalid-input')"
-                >
-                <!--提示文字-->
-                <!--<p class=""></p>-->
-              </div>
-              <!--用户名-->
-              <div class="line-wrap clearfix">
-                <span class="word-wrap"><span class="required">*</span><span class="line-word">用户名</span></span>
-                <!--这里当没有填写时不验证，提交的时候才验证,提交时全部验证一次-->
-                <input spellcheck="false"
-                       type="text"
-                       :class="usernameStatus === 0 ? '' : (usernameStatus === 1 ? 'valid-input' : 'invalid-input')"
-                       placeholder="6-16位英文大小写和数字"
-                       id="username-input"
-                       v-model="username"
-                       @keyup="checkUsername"
-                >
-              </div>
-              <!--密码-->
-              <div class="line-wrap clearfix">
-                <span class="word-wrap"><span class="required">*</span><span class="line-word">密码</span></span>
-                <input type="password"
-                       placeholder="至少6位，同时包含大小写字母和数字"
-                       :class="passwordStatus === 0 ? '' : (passwordStatus === 1 ? 'valid-input' : 'invalid-input')"
-                       id="pwd-input" v-model="password"
-                       @keyup="checkPassword"
-                >
-              </div>
-              <!--确认密码-->
-              <div class="line-wrap clearfix">
-                <span class="word-wrap"><span class="required">*</span><span class="line-word">确认密码</span></span>
-                <input type="password"
-                       placeholder="确认密码"
-                       :class="pwdAgainStatus === 0 ? '' : (pwdAgainStatus === 1 ? 'valid-input' : 'invalid-input')"
-                       id="pwd-confirm-input"
-                       v-model="passwordAgain"
-                       @keyup="checkPwdAgain"
-                >
-              </div>
-              <!--验证码-->
-              <div class="line-wrap clearfix">
-                <span class="word-wrap"><span class="required">*</span><span class="line-word">验证码</span></span>
-                <input type="text"
-                       placeholder="请输入验证码"
-                       class="verify-code"
-                       v-model="verifyCode"
-                       :class="verifyStatus === 0 ? '' : (verifyStatus === 1 ? 'valid-input' : 'invalid-input')"
-                       @keyup="checkVerifyCode"
-                >
-                <div class="verify-code-box">
-                  <!--验证码每位的颜色不同-->
-                  <span  :style="{color:colorOne}" v-text="codeDigitOne"></span>
-                  <span  :style="{color:colorTwo}" v-text="codeDigitTwo"></span>
-                  <span  :style="{color:colorThree}" v-text="codeDigitThree"></span>
-                  <span  :style="{color:colorFour}" v-text="codeDigitFour"></span>
-                </div>
-                <!--刷新按钮-->
-                <div class="refresh-code" title="看不清?刷新验证码!" @click="initVerifyCode()">
-                </div>
-              </div>
+            <!--密码-->
+            <div class="line-wrap clearfix">
+              <span class="word-wrap"><span class="required">*</span><span class="line-word">密码</span></span>
+              <input type="password"
+                     placeholder="至少6位，同时包含大小写字母和数字"
+                     :class="passwordStatus === 0 ? '' : (passwordStatus === 1 ? 'valid-input' : 'invalid-input')"
+                     id="pwd-input" v-model="password"
+                     @keyup="checkPassword"
+              >
             </div>
-            <!--确认取消还是确定-->
-            <div class="confirm">
-              <!--确定取消-->
-              <div class="yesno">
-                <div class="yesno-yes" @click="checkInfoAndRegister" :class="{'reg-button-disable':buttonDisabled}">
-                  注册
-                </div>
-                <div class="yesno-no" @click="closeDialog">
-                  取消
-                </div>
+            <!--确认密码-->
+            <div class="line-wrap clearfix">
+              <span class="word-wrap"><span class="required">*</span><span class="line-word">确认密码</span></span>
+              <input type="password"
+                     placeholder="确认密码"
+                     :class="pwdAgainStatus === 0 ? '' : (pwdAgainStatus === 1 ? 'valid-input' : 'invalid-input')"
+                     id="pwd-confirm-input"
+                     v-model="passwordAgain"
+                     @keyup="checkPwdAgain"
+              >
+            </div>
+            <!--验证码-->
+            <div class="line-wrap clearfix">
+              <span class="word-wrap"><span class="required">*</span><span class="line-word">验证码</span></span>
+              <input type="text"
+                     placeholder="请输入验证码"
+                     class="verify-code"
+                     v-model="verifyCode"
+                     :class="verifyStatus === 0 ? '' : (verifyStatus === 1 ? 'valid-input' : 'invalid-input')"
+                     @keyup="checkVerifyCode"
+              >
+              <div class="verify-code-box">
+                <!--验证码每位的颜色不同-->
+                <span  :style="{color:colorOne}" v-text="codeDigitOne"></span>
+                <span  :style="{color:colorTwo}" v-text="codeDigitTwo"></span>
+                <span  :style="{color:colorThree}" v-text="codeDigitThree"></span>
+                <span  :style="{color:colorFour}" v-text="codeDigitFour"></span>
+              </div>
+              <!--刷新按钮-->
+              <div class="refresh-code" title="看不清?刷新验证码!" @click="initVerifyCode()">
               </div>
             </div>
           </div>
-        </transition>
-      </div>
+          <!--确认取消还是确定-->
+          <div class="confirm">
+            <!--确定取消-->
+            <div class="yesno">
+              <div class="yesno-yes" @click="checkInfoAndRegister" :class="{'reg-button-disable':buttonDisabled}">
+                注册
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
 </template>
 
@@ -387,153 +386,172 @@
     //注意，opacity的话子元素会继承父元素的透明度，坑
     background-color: rgba(0,0,0,0.6);
     z-index:@overlayIndex;
-    @closeSize:30px;
-    @closePosOffset:10px;
-    .close{
-      position: absolute;
-      right:@closePosOffset;
-      top:@closePosOffset;
-      width:@closeSize;
-      height:@closeSize;
-      background: url('./../assets/icon/close.png');
-      background-size: @closeSize @closeSize;
-      transition:transform .5s ease;
-      cursor:pointer;
-      &:hover{
-        transform: rotate(90deg);
-      }
-    }
-    @titleHeight:60px;
-    .title{
-      height:@titleHeight;
-      border-bottom: 1px solid #cbcbcb;
-      line-height: @titleHeight;
-      color:#898989;
-      font-family: "Microsoft YaHei";
-      padding-left: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .content{
-      min-height:120px;
-      padding:40px 20px;
-      font-family: "Microsoft YaHei";
-    }
-    .confirm{
-      height:@titleHeight;
-      border-top:1px solid #cbcbcb;
-    }
-    .yes,.yesno-yes{
-      font-family: "Microsoft YaHei";
-      width:80px;
-      height:40px;
-      background-color: #409eff;
-      border-radius: 5px;
-      float:right;
-      margin-right: 15px;
-      cursor: pointer;
-      margin-top: 10px;
-      color:#fff;
-      line-height: 40px;
-      text-align: center;
-    }
-    //按钮禁用，通过透明度来
-    .reg-button-disable{
-      opacity: 0.5;
-      cursor:not-allowed;
-    }
-    .yesno-no{
-      font-family: "Microsoft YaHei";
-      box-sizing: border-box;
-      width:80px;
-      height:40px;
-      border-radius: 5px;
-      background-color: #fff;
-      float:right;
-      margin-right: 15px;
-      cursor: pointer;
-      margin-top: 10px;
-      line-height: 40px;
-      text-align: center;
-      color: #878787;
-      border:1px solid #bebebe;
-    }
-    .required{
-      color: #f32d26;
-      position: relative;
-      top:2px;
-      margin-right: 10px;
-    }
-    .word-wrap{
-      width:20%;
-      float:left
-    }
-    .line-wrap{
-      margin-bottom: 20px;
-      height:30px;
-      line-height: 30px;
-    }
-    #email-input,#username-input,#pwd-input,#pwd-confirm-input{
-      border-radius: 5px;
-      border: 1px solid #cbcbcb;
-      height:30px;
-      text-indent: 10px;
-      margin-left: 4%;
-      width:67%;
-      padding-right:8%;
-      float:right;
-      transition: border .5s;
-      &:focus{
-        border:1px solid #409eff;
-      }
-    }
-    .verify-code{
-      border-radius: 5px;
-      border: 1px solid #cbcbcb;
-      height:30px;
-      text-indent: 10px;
-      margin-left: 4.5%;
-      width:30%;
-      padding-right:8%;
-      float:left;
-      transition: border .5s;
-      &:focus{
-        border:1px solid #409eff;
-      }
-    }
-    .verify-code-box{
-      margin-left: 5%;
-      width:20%;
-      height:33px;
-      background-color: #a6a6a6;
-      float:left;
-      border-radius: 5px;
-      text-align: center;
-    }
-    .refresh-code{
-      @codeSize:30px;
-      width:@codeSize;
-      height:30px;
-      //border: 1px solid #cbcbcb;
-      float:right;
-      border-radius: 5px;
-      background: url('./../assets/icon/refresh.png') center center no-repeat;
-      background-size:@codeSize @codeSize ;
-      cursor: pointer;
-    }
-    //表单填写正确错误的图片
-    .valid-input{
-      background: url('./../assets/icon/right.png') 98% center no-repeat;
-      background-size:20px 20px;
-      //不加important则优先级不够高，不会起作用
-      border:1px solid #12c212 !important;
-    }
-    .invalid-input{
-      background: url('./../assets/icon/wrong.png') 98% center no-repeat;
-      background-size:20px 20px;
-      border:1px solid #e21b10 !important;
+
+  }
+  @closeSize:30px;
+  @closePosOffset:10px;
+  .close{
+    position: absolute;
+    right:@closePosOffset;
+    top:@closePosOffset;
+    width:@closeSize;
+    height:@closeSize;
+    background: url('./../assets/icon/close.png');
+    background-size: @closeSize @closeSize;
+    transition:transform .5s ease;
+    cursor:pointer;
+    &:hover{
+      transform: rotate(90deg);
     }
   }
+  @titleHeight:60px;
+  .title{
+    height:@titleHeight;
+    line-height: @titleHeight;
+    font-family: "Microsoft YaHei";
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color:#ea6f5a;
+    &:before,&:after{
+      content:'';
+      display: block;
+      border-top:1px solid #ea6f5a;
+      position:absolute;
+      top:30px;
+      width:20%;
+    }
+    &:before{
+      left:20%;
+    }
+    &:after{
+      right:20%;
+    }
+  }
+  .content{
+    min-height:120px;
+    padding:40px 20px 20px 20px;
+    font-family: "Microsoft YaHei";
+  }
+  .confirm{
+    height:@titleHeight;
+    margin-bottom: 20px;
+  }
+  .yes,.yesno-yes{
+    font-family: "Microsoft YaHei";
+    width:80%;
+    height:40px;
+    background-color: #ea6f5a;
+    border-radius: 5px;
+    margin: 0 auto 10px auto;
+    cursor: pointer;
+    color:#fff;
+    line-height: 40px;
+    text-align: center;
+    transition: background-color .5s;
+    &:hover{
+      background-color: #f07e5e;
+
+    }
+  }
+  //按钮禁用，通过透明度来
+  .reg-button-disable{
+    opacity: 0.5;
+    cursor:not-allowed;
+  }
+  .yesno-no{
+    font-family: "Microsoft YaHei";
+    box-sizing: border-box;
+    width:80px;
+    height:40px;
+    border-radius: 5px;
+    background-color: #fff;
+    margin: 10px auto;
+    cursor: pointer;
+    line-height: 40px;
+    text-align: center;
+    color: #878787;
+    border:1px solid #bebebe;
+  }
+  .required{
+    color: #f32d26;
+    position: relative;
+    top:2px;
+    margin-right: 10px;
+  }
+  .word-wrap{
+    width:20%;
+    float:left
+  }
+  .line-wrap{
+    margin-bottom: 20px;
+    height:30px;
+    line-height: 30px;
+  }
+  #email-input,#username-input,#pwd-input,#pwd-confirm-input{
+    border-radius: 5px;
+    border: 1px solid #cbcbcb;
+    height:30px;
+    text-indent: 10px;
+    margin-left: 4%;
+    width:67%;
+    padding-right:8%;
+    float:right;
+    transition: border .5s;
+    background-color: rgba(236, 236, 236, 0.6);
+    &:focus{
+      border:1px solid #409eff;
+    }
+  }
+  .verify-code{
+    border-radius: 5px;
+    border: 1px solid #cbcbcb;
+    height:30px;
+    text-indent: 10px;
+    margin-left: 4.5%;
+    width:30%;
+    padding-right:8%;
+    float:left;
+    transition: border .5s;
+    background-color: rgba(236, 236, 236, 0.6);
+    &:focus{
+      border:1px solid #409eff;
+    }
+  }
+  .verify-code-box{
+    margin-left: 5%;
+    width:20%;
+    height:33px;
+    background-color: #a6a6a6;
+    float:left;
+    border-radius: 5px;
+    text-align: center;
+  }
+  .refresh-code{
+    @codeSize:30px;
+    width:@codeSize;
+    height:30px;
+    //border: 1px solid #cbcbcb;
+    float:right;
+    border-radius: 5px;
+    background: url('./../assets/icon/refresh.png') center center no-repeat;
+    background-size:@codeSize @codeSize ;
+    cursor: pointer;
+  }
+  //表单填写正确错误的图片
+  .valid-input{
+    background: url('./../assets/icon/right.png') 98% center no-repeat;
+    background-size:20px 20px;
+    //不加important则优先级不够高，不会起作用
+    border:1px solid #12c212 !important;
+  }
+  .invalid-input{
+    background: url('./../assets/icon/wrong.png') 98% center no-repeat;
+    background-size:20px 20px;
+    border:1px solid #e21b10 !important;
+  }
+
+
   .dialog{
     width:30%;
     min-width: 500px;
@@ -548,7 +566,7 @@
     opacity: 1;
     box-shadow: 0 0 8px 2px #474747;
   }
-  //动画过渡,为啥关闭对话框无动画，真的醉了
+  //对话框动画过渡
   .myslide-enter{
     //注意这里不能写成-100px，因为这是绝对值，不是相对于原来运动,所以要在原来的基础上加
     transform: translate(-50%,-60%);
@@ -567,6 +585,14 @@
     transition: all .5s ease;
   }
   .myslide-leave-active{
+    transition: all .5s ease;
+  }
+
+  //遮罩动画
+  .overlay-fade-enter,.overlay-fade-leave-to{
+    opacity: 0;
+  }
+  .overlay-fade-enter-active,.overlay-fade-leave-active{
     transition: all .5s ease;
   }
 

@@ -5,15 +5,25 @@
         <a href="#"><img src="./../assets/icon/banner-logo.png"></a>
         <span class="banner-word"><img src="./../assets/icon/banner-word.png"></span>
         <ul class="banner-ul">
-          <li><a href="#" @click="showLogin">登录</a></li>
+          <li v-if="!userNickName" class="li-hover"><a href="#" @click="showLogin">登录</a></li>
+          <li v-if="userNickName" class="user-graph-li">
+            <a class="user-graph">
+              <span class="user-profile"><img src="./../assets/icon/info-warning.png"></span>
+              <!--登录成功后的用户选项(个人信息，退出等)-->
+              <div class="user-options">
+              </div>
+            </a>
+          </li>
           <!--这里点击注册要弹出框，并初始化验证码，得调用注册组件的方法-->
-          <li><a href="#" @click="showRegister">注册</a></li>
+          <li v-if="!userNickName" class="li-hover"><a href="#" @click="showRegister">注册</a></li>
         </ul>
         <input type="text" class="banner-input" placeholder="组件名字">
       </div>
       <!--对话框模态框,遮罩也在里面-->
+      <!--注意，不同的点击事件是在组件外部进行确定，内部只需触发一个点击方法即可-->
       <modal-dialog v-on:on-close="closeDialog"
-                    v-show="isDialogClose"
+                    v-on:on-confirm="modalOnConfirm"
+                    :modalShow="isDialogClose"
                     :title="modalDialogTitle"
                     :content="modalDialogContent">
       </modal-dialog>
@@ -22,10 +32,9 @@
                        v-on:on-close="closeDialog">
       </register-dialog>
       <!--登录模态框-->
-      <login-dialog></login-dialog>
-
-
-
+      <login-dialog :loginShow="isLoginClose"
+                    v-on:on-close="closeDialog">
+      </login-dialog>
 
   </div>
 </template>
@@ -53,10 +62,48 @@
                 //对话框标题,根据需要动态改变
                 modalDialogTitle:'',
                 modalDialogContent:'',
-                modalDialogType:0
+                modalDialogType:0,
+                //对话框事件名
+                eventName:''
             }
         },
+        //计算属性
+        computed:{
+          userNickName:function(){
+            //这里模块里getters的方法会被注册为全局，不用加模块名字了
+            return this.$store.getters.getUserName;
+          }
+        },
         methods:{
+        	  //对话框点击确定后触发该事件，根据事件类型来触发不同事件
+            modalOnConfirm(){
+            	switch(this.eventName){
+            		//跳转到登录界面
+                case 'JUMP_TO_LOGIN_DIALOG':
+                {
+                	//隐藏对话框
+                  this.isDialogClose = false;
+                  //打开登录框
+                  this.isLoginClose = true;
+                  break;
+                }
+                case 'HIDE_SELF_DIALOG':
+                {
+                  //隐藏对话框
+                  this.isDialogClose = false;
+                  break;
+                }
+                case 'JUMP_TO_REG_DIALOG':
+                {
+                  //隐藏对话框
+                  this.isDialogClose = false;
+                  this.isRegisterClose = true;
+                  break;
+                }
+                default:
+                	break;
+              }
+            },
             //关闭所有对话框
             closeDialog(){
                 this.isDialogClose = false;
@@ -69,9 +116,20 @@
                 //触发注册组件的方法,参数不是组件的方法名，而是和接收方法名相同即可
                 eventBus.$emit('initVerifyCode');
             },
-            //弹出注册对话框
+            //弹出登录对话框
             showLogin(){
                this.isLoginClose = true;
+            },
+            //弹出对话框方法，内容方法自定义,eventName是事件方法名
+            //type:1是确定，2是确认取消,后续扩展
+            popDialog(title,content,type,eventName){
+              //用户保存成功，弹出提示框
+              this.isDialogClose = true;
+              //提示框信息
+              this.modalDialogTitle = title;
+              this.modalDialogContent = content;
+              this.modalDialogType = type;
+              this.eventName = eventName;
             }
 
         },
@@ -79,13 +137,15 @@
         	//用户注册成功,非父子组件的通信,可以使用一个空的 Vue 实例作为事件总线,写在eventBus.js里面
           //注意这里的this必须用箭头函数才能成功，否则作用域不是VUE实例
         	eventBus.$on('userSaveSuccessful',()=>{
-            //用户保存成功，弹出提示框
-        		this.isDialogClose = true;
-        		//提示框信息
-            this.modalDialogTitle = '注册成功';
-            this.modalDialogContent = '恭喜~您已经注册成功，点击确定进入登录页面!';
-            this.modalDialogType = 1;
-
+        		this.popDialog('注册成功','恭喜~您已经注册成功，点击确定进入登录页面!',1,'JUMP_TO_LOGIN_DIALOG');
+          });
+        	//用户注册失败：名字已经被注册
+          eventBus.$on('userSaveFailed-alreadyExists',()=>{
+            this.popDialog('注册失败','很不巧~您的用户名已经被注册了，请换一个重新注册吧!',1,'HIDE_SELF_DIALOG');
+          })
+          //用户登录时未注册,点击确定前往注册对话框
+          eventBus.$on('userDoseNotRegister',()=>{
+            this.popDialog('登录失败','用户名不存在，点击确定前往注册!',1,'JUMP_TO_REG_DIALOG');
           })
         }
     }
@@ -127,17 +187,65 @@
       float:right;
       margin-right: 100px;
       line-height: @bannerHeight;
+      .user-graph-li{
+        padding-bottom: 10px;
+      }
       li{
         float:right;
         //最好不要设置li的宽度，只设置padding，这样自适应
         padding:0 10px;
         height:@bannerHeight;
-        &:hover{
-          border-bottom: 4px solid #65bcf7;
+        transition: all .5s;
+        cursor: pointer;
+        border-bottom: 4px solid transparent;
+        .li-hover:hover{
+            border-bottom: 4px solid #65bcf7;
         }
         a{
           color:#34495e;
         }
+        //用户选项
+        .user-graph{
+          display: block;
+          position: relative;
+          //下拉菜单
+          @optionWidth:150px;
+          .user-options{
+            display: none;
+            position: absolute;
+            width:@optionWidth;
+            height:300px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px #b9b9b9;
+            left:-50px;
+            top:@bannerHeight + 10px;
+          }
+          //用户头像,圆形
+          .user-profile{
+            @profileSize:40px;
+            display: inline-block;
+            margin: 0 auto;
+            width:@profileSize;
+            height:@profileSize;
+            border-radius: @profileSize / 2;
+            background-color: #cdcdcd;
+            //隐藏圆圈外的头像
+            overflow: hidden;
+            img{
+              width:100%;
+              height:100%;
+              top:0;
+            }
+          }
+        }
+      }
+      //li的hover，注意banner有padding，这样鼠标移到padding上下拉菜单就消失
+      //必须将li的padding增加到覆盖banner的padding
+      .user-graph-li:hover .user-options{
+        display: block;
+      }
+      .user-graph-li{
+        width:100px;
       }
     }
     .banner-input{
@@ -170,6 +278,7 @@
   }
   .slide-enter-active,.slide-leave-active{
     transition: all .5s ease;
+
   }
   .slide-enter-to,.slide-leave{
     opacity: 1;

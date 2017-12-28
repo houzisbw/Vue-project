@@ -48,9 +48,44 @@ router.post('/register',function(req,res,next){
 
         }
     });
+});
 
-
-
+//登录请求
+router.post('/login',function(req,res,next){
+    //获取用户信息
+    var username = req.body.username,
+        password = req.body.password;
+    //查询用户是否存在
+    var query = User.where({username:username});
+    query.findOne(function(err,doc){
+      //返回前端状态码:-1出错，0未找到用户，1密码用户名都正确，2名字正确，密码错误
+      if(err){
+        res.json({
+          status:-1
+        })
+      }else{
+        //找到用户了
+        if(doc){
+          //密码不正确
+          if(doc.password !== password){
+            res.json({
+              status:2
+            })
+          //登录成功,返回用户名
+          }else{
+            res.json({
+              status:1,
+              username:doc.username
+            })
+          }
+        //未找到用户
+        }else{
+          res.json({
+            status:0
+          })
+        }
+      }
+    })
 })
 
 

@@ -3,6 +3,8 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+//导入vuex状态管理器
+import store from './store'
 
 Vue.config.productionTip = false
 
@@ -12,6 +14,7 @@ import './assets/css/reset.css'
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
+  store,
   router,
   template: '<App/>',
   components: { App }
