@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 
 var index = require('./routes/index');
 var users = require('./routes/users');
+var phantom = require('./routes/phantom');
 
 var app = express();
 
@@ -40,6 +41,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', index);
 app.use('/user', users);
+//网页截图和解析html结构
+app.use('/phantom',phantom);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

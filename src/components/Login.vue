@@ -52,7 +52,7 @@
                 </div>
               </div>
               <!--30天内自动登录-->
-              <input type="checkbox" id="remember">
+              <input type="checkbox" id="remember" v-model="isAutoLogin">
               <label class="remember-word" for="remember">30天内自动登录</label>
               <!--登录按钮-->
               <button class="login-btn" @click="login" :class="{'login-button-disable':buttonDisabled}">登&nbsp;&nbsp;录</button>
@@ -97,7 +97,9 @@
         username:'',
         password:'',
         //密码提示信息
-        passwordNotice:''
+        passwordNotice:'',
+        //是否自动登录
+        isAutoLogin:false
 
       }
     },
@@ -112,6 +114,7 @@
       },
       //登录处理
       login(){
+
           if(this.buttonDisabled){
             return;
           }
@@ -129,7 +132,8 @@
           //要发送的数据
           let param = {
           	username:this.username,
-            password:this.password
+            password:this.password,
+            isAutoLogin:this.isAutoLogin
           };
           axios.post('/user/login',param).then((resp)=>{
               let status = resp.data.status;
@@ -147,8 +151,8 @@
               //登录成功
               }else if(status === 1){
                   //改变vuex的状态
-                  alert(resp.data.username)
                   this.$store.commit('updateUserName',resp.data.username);
+                  this.$emit('on-close');
               }
           })
       },

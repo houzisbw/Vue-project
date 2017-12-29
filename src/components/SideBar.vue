@@ -6,7 +6,11 @@
           <transition name="slide" >
             <ul class="second-level" v-show="item.isActive">
               <li v-for="(subitem,subindex) in item.subMenu"  :key="subitem.menuName" >
-                <router-link :to="subitem.menuLink" class="second-a" active-class="subMenuActive">{{subitem.menuName}}</router-link>
+                <router-link :to="subitem.menuLink"
+                             class="second-a"
+                             active-class="subMenuActive">
+                  {{subitem.menuName}}
+                </router-link>
               </li>
             </ul>
           </transition>
@@ -38,16 +42,22 @@
                     isActive:false,
                     subMenu:[
                       {
-                          menuName:'添加书签',
-                          menuLink:'/book'
+                        menuName:'热门书签',
+                        menuLink:'/user/hotbookmark'
+
                       },
                       {
-                          menuName:'查看书签',
-                          menuLink:'/b'
+                          menuName:'我的书签',
+                          menuLink:'/user/showbookmark'
+
+                      },
+                      {
+                          menuName:'添加书签',
+                          menuLink:'/user/addbookmark'
                       },
                       {
                           menuName:'修改书签',
-                          menuLink:'/c'
+                          menuLink:'/user/modfifybookmark'
                       }
                     ]
                   },
@@ -117,7 +127,7 @@
     .first-level-ul{
       margin-top: 100px;
       @firstLevelColor:#7f8c8d;
-      @firstLevelHoverBgColor: #8f3334;
+      @firstLevelHoverBgColor: #eeeeee;
       @firstLevelHoverWordColor: #fff;
       @firstLevelPaddingLeft:80px;
       .sep{
@@ -139,8 +149,9 @@
         font-family: "Microsoft YaHei";
         cursor: pointer;
         //重要，是a标签的hover状态，不是li，一定注意
+        transition: background-color .5s ease;
         &:hover{
-          //background-color:@firstLevelHoverBgColor;
+          background-color:@firstLevelHoverBgColor;
           //color:@firstLevelHoverWordColor;
         }
       }
@@ -164,13 +175,17 @@
         background-size:30px 30px,20px 20px;
       }
       .second-level{
-        padding-top: 20px;
-        padding-bottom: 20px;
+        //给ul加padding会导致动画跳跃，因为height不包含padding
+        //padding-top: 20px;
+        //padding-bottom: 20px;
         text-align: center;
         background-color: #6b9aff;
+        //这个很关键，不隐藏掉溢出的内容的话菜单会显示重叠
+        overflow: hidden;
         //内阴影
         box-shadow: 0 0 6px #898989 inset;
         @borderWidth:10px;
+        //二级菜单每个a标签
         .second-a{
           /*必须要这一句，才有高度*/
           display: inline-block;
@@ -179,7 +194,7 @@
           -webkit-box-sizing: border-box;
           width:100%;
           font-size: 16px;
-          padding:10px 30px 10px 20px;
+          padding:20px 30px 20px 20px;
           border-left:@borderWidth solid transparent;
           transition: border-left 0.5s;
           color:#fff;
@@ -201,7 +216,9 @@
   }
 
   //动画过渡效果
-  @maxHeight:148px;
+  //4个一级菜单
+  @menuNum:4;
+  @maxHeight:56px * @menuNum;
   .slide-enter,.slide-leave-to{
     max-height: 0;
   }
@@ -209,11 +226,10 @@
     max-height:@maxHeight;
   }
   .slide-leave{
-    max-height:148px;
+    max-height:@maxHeight;
   }
   /*注意二级菜单高度不确定，用max-height代替auto，auto不会让transition 生效*/
   .slide-enter-active,.slide-leave-active{
-    transition: all 0.5s ease;
-
+    transition: max-height 0.5s ease;
   }
 </style>

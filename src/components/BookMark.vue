@@ -1,53 +1,79 @@
 <template>
     <div class="book-mark" id="title-top">
-      <div class="title" >
+      <div class="title" v-if="!isLogin">
+        您还未登录，请<span class="login-word" @click="login">登录</span>后查看书签
+      </div>
+      <div class="title" v-else>
         所有书签,一共110个
       </div>
       <!--书签内容区域-->
-      <div class="book-mark-content clearfix">
-        <!--每一行标签数是响应式变化的-->
-        <div class="mark-wrap" v-for="i in markNum">
-          <!--书签标题-->
-          <div class="mark-title">
+      <div v-if="isLogin">
+          <div class="book-mark-content clearfix">
+            <!--每一行标签数是响应式变化的-->
+            <!--如果登录了才显示-->
+              <div class="mark-wrap" v-for="i in markNum">
+                <!--书签标题-->
+                <div class="mark-title">
+                </div>
+              </div>
+              <!--空div，用于让flex最后一行左对齐，原理就是占位置,宽度和mark-wrap一样,个数要为每行最多数-1-->
+              <div class="flex-padding">
+              </div>
+              <div class="flex-padding">
+              </div>
+              <div class="flex-padding">
+              </div>
+              <div class="flex-padding">
+              </div>
+              <div class="flex-padding">
+              </div>
+              <div class="flex-padding">
+              </div>
           </div>
-        </div>
-        <!--空div，用于让flex最后一行左对齐，原理就是占位置,宽度和mark-wrap一样,个数要为每行最多数-1-->
-        <div class="flex-padding">
-        </div>
-        <div class="flex-padding">
-        </div>
-        <div class="flex-padding">
-        </div>
-        <div class="flex-padding">
-        </div>
-        <div class="flex-padding">
-        </div>
-        <div class="flex-padding">
-        </div>
+          <!--用于让底部和内容隔开一定距离-->
+          <div class="bottom-padding">
+          </div>
+          <!--返回顶部-->
+          <a class="to-top" @click="goTop()">
+          </a>
       </div>
-      <!--用于让底部和内容隔开一定距离-->
-      <div class="bottom-padding">
-      </div>
-      <!--返回顶部-->
-      <a class="to-top" @click="goTop()">
-      </a>
     </div>
 </template>
 
 <script>
+    import {eventBus} from './../eventBus'
     export default {
         name: 'book-mark',
         data(){
             return{
-                markNum:39
+                markNum:39,
+
             }
+        },
+        mounted(){
+        	//如果登录就从后台拿到书签信息
+          if(this.isLogin){
+          	console.log('login')
+          }
+        },
+        computed:{
+        	//用户是否登录
+        	isLogin(){
+            return this.$store.getters.getUserName;
+          }
         },
         methods:{
             //回到页面顶端
             goTop:function(){
                 //是right-content外层的scrollTop,如果用锚点的话会对路由有影响，不能用
                 document.querySelector('.right-content').scrollTop = 0;
+            },
+            //登录
+            login(){
+            	//弹出登录框,在header组件里接收该事件，然后弹出登录框
+              eventBus.$emit('pop-login-dialog');
             }
+
         }
     }
 </script>
@@ -130,6 +156,13 @@
   .mark-title{
     height:40px;
     border-bottom: 1px solid #cbcbcb;
+  }
+  //登录字体样式
+  .login-word{
+    color:#409eff;
+    &:hover{
+      cursor:pointer;
+    }
   }
 
   //响应式，媒体查询

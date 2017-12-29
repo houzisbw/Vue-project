@@ -14,6 +14,9 @@ module.exports = {
       //服务端是在3000端口上的，这里做一个代理，访问/users/*的请求都会被代理到http://localhost:3000上
       '/user/*':{
         target:'http://localhost:3000'
+      },
+      '/phantom/*':{
+        target:'http://localhost:3000'
       }
     },
 

@@ -11,6 +11,14 @@
               <span class="user-profile"><img src="./../assets/icon/info-warning.png"></span>
               <!--登录成功后的用户选项(个人信息，退出等)-->
               <div class="user-options">
+                <ul>
+                  <li v-for="(item,index) in userProfile"
+                      class="user-profile-wrap"
+                      :style="{backgroundImage:'url(' +item.iconPath + ')'}"
+                      @click="eventHandler(item.eventName)">
+                    {{item.name}}
+                  </li>
+                </ul>
               </div>
             </a>
           </li>
@@ -45,6 +53,7 @@
     import LoginDialog from '@/components/Login'
     //引入通信中转站
     import {eventBus} from './../eventBus'
+    import axios from 'axios'
     export default {
         //这里命名不要和built-in的tag名相同
         name: 'headerComp',
@@ -64,7 +73,35 @@
                 modalDialogContent:'',
                 modalDialogType:0,
                 //对话框事件名
-                eventName:''
+                eventName:'',
+                //用户个人信息
+                userProfile:[
+                  {
+                  	eventName:'myInfoPage',
+                  	url:'/',
+                    name:'我的主页',
+                    //注意必须require才行
+                    iconPath:require('./../assets/icon/user-profile-graph.png')
+                  },
+                  {
+                    eventName:'myInfoPage',
+                    url:'/',
+                    name:'我的主页',
+                    iconPath:require('./../assets/icon/user-profile-graph.png')
+                  },
+                  {
+                    eventName:'myInfoPage',
+                    url:'/',
+                    name:'我的主页',
+                    iconPath:require('./../assets/icon/user-profile-graph.png')
+                  },
+                  {
+                    eventName:'logout',
+                    url:'/',
+                    name:'退出',
+                    iconPath:require('./../assets/icon/user-profile-exit.png')
+                  }
+                ]
             }
         },
         //计算属性
@@ -75,6 +112,57 @@
           }
         },
         methods:{
+        	  //用户下拉列表的点击事件处理函数
+            eventHandler:function(eventName){
+            	  switch(eventName){
+            	  	//退出登录
+                  case 'logout':
+                  {
+                  	this.logout();
+                  	break;
+                  }
+                  case 'myInfoPage':{
+                  	break;
+                  }
+                  default:
+                  	break;
+                }
+            },
+            getCookie(name) {
+              var arr, reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
+              if (arr = document.cookie.match(reg))
+                return (arr[2]);
+              else
+                return null;
+            },
+            //退出登录
+            logout(){
+            	axios.post('user/logout').then((resp)=>{
+                let res = resp.data;
+                //清除成功
+                if(res.status === 1){
+                  this.$store.commit('updateUserName','');
+                }
+              })
+            },
+        	  //检查是否登录，该方法在mounted阶段调用，也就是刷新页面时
+            //后台查看是否存在cookie，若存在返回已经登录状态码
+            checkLogin(){
+            	  //首先直接检查浏览器cookie是否存在，如果发送后台验证则会有短暂的闪烁
+                var username = this.getCookie('username');
+            	  if(username){
+                  this.$store.commit('updateUserName',username);
+                }
+                axios.get('user/checkLogin').then((resp)=>{
+                    let status = resp.data.status,
+                        username = resp.data.username;
+                    //如果没有登录
+                    if(status !== 1){
+                        //设置vuex中用户名为空，达到退出登录的目的
+                        this.$store.commit('updateUserName','');
+                    }
+                })
+            },
         	  //对话框点击确定后触发该事件，根据事件类型来触发不同事件
             modalOnConfirm(){
             	switch(this.eventName){
@@ -134,6 +222,8 @@
 
         },
         mounted:function(){
+        	//检查是否登录
+          this.checkLogin();
         	//用户注册成功,非父子组件的通信,可以使用一个空的 Vue 实例作为事件总线,写在eventBus.js里面
           //注意这里的this必须用箭头函数才能成功，否则作用域不是VUE实例
         	eventBus.$on('userSaveSuccessful',()=>{
@@ -146,6 +236,10 @@
           //用户登录时未注册,点击确定前往注册对话框
           eventBus.$on('userDoseNotRegister',()=>{
             this.popDialog('登录失败','用户名不存在，点击确定前往注册!',1,'JUMP_TO_REG_DIALOG');
+          })
+          //弹出登录框
+          eventBus.$on('pop-login-dialog',()=>{
+          	this.showLogin();
           })
         }
     }
@@ -189,6 +283,10 @@
       line-height: @bannerHeight;
       .user-graph-li{
         padding-bottom: 10px;
+        margin-left: 20px;
+      }
+      .li-hover:hover{
+        border-bottom: 4px solid #65bcf7 !important;
       }
       li{
         float:right;
@@ -198,9 +296,6 @@
         transition: all .5s;
         cursor: pointer;
         border-bottom: 4px solid transparent;
-        .li-hover:hover{
-            border-bottom: 4px solid #65bcf7;
-        }
         a{
           color:#34495e;
         }
@@ -211,14 +306,27 @@
           //下拉菜单
           @optionWidth:150px;
           .user-options{
+            transition: all .5s;
             display: none;
             position: absolute;
             width:@optionWidth;
-            height:300px;
+            //height:300px;
             background-color: #fff;
             box-shadow: 0 2px 10px #b9b9b9;
             left:-50px;
             top:@bannerHeight + 10px;
+            //用户信息每一行样式
+            .user-profile-wrap{
+              //前面float影响了这里的li
+              background-repeat: no-repeat;
+              background-position: 10% center;
+              float:none;
+              height:40px;
+              padding:10px 0 10px 60px;
+              &:hover{
+                background-color: #dcdcdc;
+              }
+            }
           }
           //用户头像,圆形
           .user-profile{
