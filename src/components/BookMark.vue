@@ -81,7 +81,7 @@
 <style scoped lang="less" type="text/less">
   .book-mark{
     width:80%;
-    margin: 0 auto;
+    margin: 10px auto;
     .title{
       width:100%;
       height:40px;
