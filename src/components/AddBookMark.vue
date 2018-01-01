@@ -54,11 +54,24 @@
         <!--分类-->
         <div class="line-wrap clearfix">
           <div class="line-wrap-left">
-            <span>*&nbsp;&nbsp;</span>书签分类(多选)
+            <span>*&nbsp;&nbsp;</span>书签分类
           </div>
           <div class="line-wrap-right">
-            <multi-chooser :selections="multiChooserData"></multi-chooser>
+            <multi-chooser :selections="multiChooserData" v-on:on-change="paramChange('typeChosenData',$event)"></multi-chooser>
           </div>
+        </div>
+        <!--是否公开书签连接-->
+        <div class="line-wrap clearfix margin-top-fix padding-bottom-fix">
+          <div class="line-wrap-left">
+            <span>*&nbsp;&nbsp;</span>公开书签
+          </div>
+          <switch-slide  v-on:input-change="isBookMarkOpen" class="switch-slide-margin-top-fix"></switch-slide>
+        </div>
+        <!--添加按钮-->
+        <div class="line-wrap clearfix margin-top-fix  margin-bottom-fix">
+         <div class="add-bookmark-button" :class="{'add-bookmark-button-disable':isAddButtonDisabled}" @click="addBookMark">
+           添加
+         </div>
         </div>
       </div>
     </div>
@@ -67,14 +80,23 @@
 <script>
   import {eventBus} from './../eventBus'
   import axios from 'axios'
+  //多选按钮
   import MultiChooser from './MultiChooser'
+  //滑动开关，switch是内建名，不能使用
+  import SwitchSlide from './basic/Switch'
 	export default {
 		name: 'addBookMark',
     components:{
-      MultiChooser
+      MultiChooser,
+      SwitchSlide
     },
     data(){
 			return {
+				  //提交按钮是否禁用
+          isAddButtonDisabled:false,
+				  //是否公开连接
+          isBookMarkPublic:true,
+          //网页相关
           pageUrl:'',
           pageTitle:'',
           //标题输入框是否禁用
@@ -85,7 +107,7 @@
           isFail:false,
           //placeholder
           titlePlaceholder:'如果输入网页地址正确，网站会自动解析标题',
-          //名称
+          //网页截图名称
           titleScreenShotName:'',
           //控制网页图片加载时样式显示与否
           isTitleScreenShotLoading:false,
@@ -100,16 +122,10 @@
             {
               label:'收藏',
               value:1
-            },
-            {
-              label:'妹妹的',
-              value:2
-            },
-            {
-              label:'NBA篮球世界',
-              value:3
             }
-          ]
+          ],
+          //多选按钮选中的数据
+          typeChosenData:[]
       }
     },
     computed:{
@@ -120,7 +136,96 @@
     watch:{
 
     },
+    mounted:function(){
+    	eventBus.$on('checkNewTypeExist',(type)=>{
+    		  var isExist = false;
+    		  for(var i=0;i<this.multiChooserData.length;i++){
+    		  	if(this.multiChooserData[i].label === type){
+    		  		isExist = true;
+    		  		break;
+            }
+          }
+          if(type === '' || type.length >=10){
+    		  	isExist = true;
+          }
+
+          //如果不合法
+          if(isExist){
+            eventBus.$emit('bookMarkNewTypeInvalid');
+          //如果合法
+          }else{
+            //eventBus.$emit('bookMarkNewTypeValid');
+            var value = this.multiChooserData.length;
+            this.multiChooserData.push({
+              label:type,
+              value:value+1
+            })
+            //关闭对话框
+            eventBus.$emit('closeBookMarkAddDialog');
+          }
+      })
+    },
     methods:{
+    	paramChange(attr,val){
+    		this[attr] = val;
+      },
+    	//添加书签
+      addBookMark(){
+    		//首先判断用户登录状态,如果登录过期直接退出
+
+      	//如果网页书签标题加载完成
+      	if(!this.isAddButtonDisabled){
+          //检查必填项是否填写完成,url必须符合正则校验，标题必须不为空，书签分类必须选择
+          var regExp = /^https?:\/\/\w+\.\w+/;
+          if(!regExp.exec(this.pageUrl)){
+              //弹框提示
+              eventBus.$emit('bookMarkInfoInvalid','书签链接填写非法，请重新填写!');
+              return;
+          }
+          if(!this.pageTitle){
+              //弹框提示
+              eventBus.$emit('bookMarkInfoInvalid','标题不能为空，请重新填写!');
+              return;
+          }
+          if(this.typeChosenData.length === 0){
+              //弹框提示
+              eventBus.$emit('bookMarkInfoInvalid','请选择至少一项书签分类!');
+              return;
+          }
+          //禁用提交按钮
+          this.isAddButtonDisabled = true;
+          //传给后端的参数
+          var param = {
+          	pageUrl:this.pageUrl,
+            pageTitle:this.pageTitle,
+            markType:this.typeChosenData,
+            isPublic:this.isBookMarkPublic,
+            //截图名字
+            pageScreenName:this.titleScreenShotName
+          }
+          //发送请求保存书签
+          axios.post('/user/saveBookMark',param).then((response)=>{
+              //恢复提交按钮
+              this.isAddButtonDisabled = false;
+              let status = response.data.status;
+              if(status === 2){
+              	  //保存成功
+                  eventBus.$emit('bookMarkSaveState',2)
+              }else if(status === 1){
+              	  //书签重复
+                  eventBus.$emit('bookMarkSaveState',1)
+              }else if(status === -1){
+              	  //保存失败
+                  eventBus.$emit('bookMarkSaveState',-1)
+              }
+          })
+
+        }
+      },
+    	//是否公开链接
+      isBookMarkOpen(isOpen){
+        this.isBookMarkPublic = isOpen;
+      },
     	//弹出登录对话框
     	login(){
     		eventBus.$emit('pop-login-dialog');
@@ -143,6 +248,8 @@
         //注意是以这个形式开头，结尾任意
         var regExp = /^https?:\/\/\w+\.\w+/;
         if(regExp.exec(this.pageUrl)){
+            //keyup时就要禁用提交按钮
+            this.isAddButtonDisabled = true;
             //发送请求
             this.timerId = setTimeout(()=>{
             	//console.log('send req');
@@ -154,6 +261,7 @@
               axios.post('/phantom/getTitle',{url:this.pageUrl}).then((resp)=>{
                 //启用网页标题输入框
                 this.isLoading = false;
+                this.isAddButtonDisabled = false;
                 this.isTitleInputDisable = false;
                 this.isTitleScreenShotLoading = false;
                 let title = resp.data.pageTitle;
@@ -188,9 +296,23 @@
 </script>
 
 <style type="text/less" lang="less" scoped>
+  .padding-bottom-fix{
+    padding-bottom: 20px;
+  }
+  .margin-top-fix{
+    margin-top: -20px;
+  }
+  .margin-bottom-fix{
+    margin-bottom: 0!important;
+    border-top:1px solid #b5b5b5;
+  }
+  .switch-slide-margin-top-fix{
+    margin-top: 15px;
+  }
+
   .book-mark{
     width:80%;
-    margin: 10px  auto 0 auto;
+    margin: 10px  auto 80px auto;
     @minWidth:400px;
     .title{
       width:100%;
@@ -225,6 +347,28 @@
         width:100%;
         min-height:40px;
         margin-bottom: 20px;
+        .add-bookmark-button{
+          height:40px;
+          background-color: #21BA45;
+          cursor: pointer;
+          border-radius: 5px;
+          width:80px;
+          float:right;
+          margin-top: 30px;
+          margin-bottom: 0;
+          line-height: 40px;
+          text-align: center;
+          color:#fff;
+          font-size: 18px;
+          transition: all .5s;
+          &:hover{
+            background-color: #06ba3d;
+          }
+        }
+        .add-bookmark-button-disable{
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
         .line-wrap-left{
           width:15%;
           min-width: 100px;
@@ -287,7 +431,7 @@
           .title-screen-shot-wrap{
             position: relative;
             width:300px;
-            height:400px;
+            height:350px;
             border: 1px dashed #CDCDCD;
             margin-top: 15px;
             text-align: center;

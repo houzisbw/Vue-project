@@ -54,7 +54,7 @@ router.post('/getTitle',function(req,res,next){
           top: 0,
           left: 0,
           width: 300,
-          height: 400
+          height: 350
         });
         //图片缩放
         sitepage.property('zoomFactor', 0.25);

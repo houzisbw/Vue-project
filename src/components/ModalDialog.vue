@@ -18,11 +18,12 @@
         <!--内容-->
         <div class="content">
           {{content}}
+          <slot v-if="modalShow"></slot>
         </div>
         <!--确认取消还是确定-->
         <div class="confirm">
           <!--确定-->
-          <div class="yes" v-if="confirmType === 1">
+          <div class="yes" v-if="confirmType === 1" @click="confirmMethod">
             确定
           </div>
           <!--确定取消-->

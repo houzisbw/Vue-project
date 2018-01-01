@@ -12,7 +12,7 @@ router.post('/register',function(req,res,next){
     let username = req.body.username,
         email = req.body.email,
         password = req.body.password;
-    //存入数据库
+    //存入数据库,不写的字段则是空
     var userInfo = new User({
         username:username,
         email:email,
@@ -128,7 +128,110 @@ router.post('/login',function(req,res,next){
     })
 })
 
+//保存书签请求
+router.post('/saveBookMark',function(req,res,next){
+    let username = req.cookies.username;
+    let url = req.body.pageUrl,
+        title = req.body.pageTitle,
+        isPublic = req.body.isPublic,
+        markType = req.body.markType,
+        screenShotName = req.body.pageScreenName;
+    //查询用户，根据name
+    var query = User.where({username:username});
+    query.findOne(function(err,doc){
+      //返回前端状态码:-1出错，1书签已存在，2保存成功
+      if(err) {
+        res.json({
+          status: -1
+        })
+      }else{
+        //判断书签是否存在，若存在则不保存
+        var isExist = false;
+        doc.bookMark.forEach(function (item) {
+            //很奇怪，里面嵌套了一层数组，目前不知道为啥
+            if(item[0].url === url){
+              isExist = true;
+            }
+        })
+        //如果已经存在同名书签
+        if(isExist){
+          res.json({
+            status: 1
+          })
+        }else{
+          //保存书签
+          var bm = {
+            url:url,
+            title:title,
+            isPublic:isPublic,
+            screenShotName:screenShotName,
+            type:markType
+          }
+          doc.bookMark.push(bm);
+          doc.save(function(err1,doc1){
+              if(err1){
+                res.json({
+                  status: -1
+                })
+              //保存成功
+              }else{
+                res.json({
+                  status: 2
+                })
+              }
+          })
+        }
+      }
+    })
+});
 
+//获取书签列表
+router.get('/getBookMarkList',function(req,res,next){
+  //获取用户名
+  let username = req.cookies.username;
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    //前端状态码:1成功获取列表，-1失败
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+      if(doc){
+        // 获取书签列表
+        let bookMarkList = doc.bookMark;
+        var retBookMarkList = [];
+        bookMarkList.forEach(function(item){
+          //给每个对象添加字段：favicon字段,通过url获取网站根目录，加上/favicon.ico即可
+          var faviconUrl = '';
+          var slashCnt = 0;
+          for(var i=0;i<item[0].url.length;i++){
+            faviconUrl += item[0].url[i];
+            if(item[0].url[i] === '/'){
+              slashCnt++;
+              //根目录截止
+              if(slashCnt === 3){
+                break;
+              }
+            }
+          }
+          faviconUrl += 'favicon.ico';
+          item[0].faviconUrl = faviconUrl;
+          retBookMarkList.push(item[0]);
+        });
+        res.json({
+          status:1,
+          bookMarkList:retBookMarkList
+        })
+      }else{
+        res.json({
+          status:-1
+        })
+      }
+
+    }
+  })
+})
 
 
 

@@ -4,16 +4,35 @@
         您还未登录，请<span class="login-word" @click="login">登录</span>后查看书签
       </div>
       <div class="title" v-else>
-        所有书签,一共110个
+        所有书签,一共{{bookMarkCount}}个
       </div>
       <!--书签内容区域-->
       <div v-if="isLogin">
           <div class="book-mark-content clearfix">
             <!--每一行标签数是响应式变化的-->
             <!--如果登录了才显示-->
-              <div class="mark-wrap" v-for="i in markNum">
+              <div class="mark-wrap" v-for="(item,index) in bookMarkList">
                 <!--书签标题-->
-                <div class="mark-title">
+                <div class="mark-title" :title="item.title">
+                  <span class="title-favicon"
+                        :style="{background:'url('+item.faviconUrl + ') center center no-repeat',
+                                  backgroundSize:'24px 24px'}"
+                  >
+                  </span>
+                  {{item.title}}
+                </div>
+                <!--书签截图-->
+                <div class="mark-screen-shot"
+                     :style="{background:'url(static/bookMarkImages/'+item.screenShotName + ') center center no-repeat',
+                            backgroundSize:'cover'}"
+                     @click="jumpToNewPage(item.url)"
+                >
+                </div>
+                <!--书签分类-->
+                <div class="mark-type clearfix">
+                    <ul>
+                      <li v-for="(itemType,index) in item.type" >{{itemType.label}}</li>
+                    </ul>
                 </div>
               </div>
               <!--空div，用于让flex最后一行左对齐，原理就是占位置,宽度和mark-wrap一样,个数要为每行最多数-1-->
@@ -42,27 +61,37 @@
 
 <script>
     import {eventBus} from './../eventBus'
+    import axios from 'axios'
     export default {
         name: 'book-mark',
         data(){
             return{
                 markNum:39,
-
+                bookMarkList:[]
             }
         },
         mounted(){
         	//如果登录就从后台拿到书签信息
           if(this.isLogin){
-          	console.log('login')
+          	this.getBookMarkList();
           }
         },
         computed:{
         	//用户是否登录
         	isLogin(){
             return this.$store.getters.getUserName;
+          },
+          //书签数
+          bookMarkCount(){
+        		return this.bookMarkList.length;
           }
+
         },
         methods:{
+        	  //页面跳转
+            jumpToNewPage(url){
+            	window.open(url)
+            },
             //回到页面顶端
             goTop:function(){
                 //是right-content外层的scrollTop,如果用锚点的话会对路由有影响，不能用
@@ -72,7 +101,25 @@
             login(){
             	//弹出登录框,在header组件里接收该事件，然后弹出登录框
               eventBus.$emit('pop-login-dialog');
+            },
+            //获取书签列表
+            getBookMarkList(){
+              axios.get('/user/getBookMarkList').then((response)=>{
+                  let status = response.data.status;
+                  if(status === 1){
+                  	var listLength = response.data.bookMarkList.length;
+                    if(listLength > 0){
+                      this.bookMarkList = response.data.bookMarkList;
+                    }else{
+                    	//书签为空
+                      eventBus.$emit('empty-bookmarklist');
+                    }
+                  }else{
+
+                  }
+              })
             }
+
 
         }
     }
@@ -121,7 +168,7 @@
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     width:@markWidth;
-    height:@markHeight;
+    height:auto;
     background-color: #fff;
     float:left;
     margin-bottom: 20px;
@@ -134,6 +181,14 @@
     &:hover{
       top:-10px;
       box-shadow: 0 0 10px 5px #b5b5b5;
+    }
+    .title-favicon{
+      display: inline-block;
+      height:24px;
+      width:24px;
+      float:left;
+      margin-right: 5px;
+      background-size: 24px 24px;
     }
   }
   .bottom-padding{
@@ -156,6 +211,43 @@
   .mark-title{
     height:40px;
     border-bottom: 1px solid #cbcbcb;
+    font-size: 14px;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    padding:8px;
+    line-height: 24px;
+    color: #7c7c7c;
+    cursor: pointer;
+    //单行文本溢出省略号
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+  }
+  .mark-screen-shot{
+    height:175px;
+    border-bottom: 1px solid #cbcbcb;
+    cursor: pointer;
+  }
+  .mark-type{
+    height:auto;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    padding: 0 10px 5px 10px;
+    li{
+      float:left;
+      margin-right: 10px;
+      margin-top: 6px;
+      height:20px;
+      background-color: #e3e3e3;
+      color: #888888;
+      font-size: 11px;
+      padding:1px 6px;
+      line-height: 20px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
   }
   //登录字体样式
   .login-word{

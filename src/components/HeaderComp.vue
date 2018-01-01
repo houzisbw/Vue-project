@@ -33,7 +33,24 @@
                     v-on:on-confirm="modalOnConfirm"
                     :modalShow="isDialogClose"
                     :title="modalDialogTitle"
-                    :content="modalDialogContent">
+                    :content="modalDialogContent"
+                    :confirm-type="modalDialogType"
+      >
+      </modal-dialog>
+      <!--添加书签分类的模态框, 这里得再写一个，因为有插槽内容-->
+      <modal-dialog v-on:on-close="closeDialog"
+                    v-on:on-confirm="modalOnConfirm"
+                    :modalShow="isAddNewTypeDialogClose"
+                    title="添加书签分类(最多3个)"
+                    content=""
+      >
+        <div class="add-new-type-wrap">
+          <span class="add-new-type-word">新分类名:</span>
+          <input type="text" v-model.trim="bookMarkType" placeholder="长度小于10">
+          <div class="add-new-type-invalid-word" v-show="!isNewTypeValid">
+            您输入的名称已经存在或者不合法
+          </div>
+        </div>
       </modal-dialog>
       <!--注册模态框-->
       <register-dialog :regShow="isRegisterClose"
@@ -64,6 +81,12 @@
         },
         data(){
             return {
+            	  //添加书签分类模态框相关
+                isAddNewTypeDialogClose:false,
+                isNewTypeValid:true,
+                //input的数据
+                bookMarkType:'',
+
                 //对话框关闭与否
                 isDialogClose:false,
                 isRegisterClose:false,
@@ -188,6 +211,11 @@
                   this.isRegisterClose = true;
                   break;
                 }
+                case 'CHECK_BOOKMARK_NEW_TYPE':{
+                	//检查新添加的书签名,已经除去首尾空格了
+                  eventBus.$emit('checkNewTypeExist',this.bookMarkType);
+                	break;
+                }
                 default:
                 	break;
               }
@@ -197,6 +225,7 @@
                 this.isDialogClose = false;
                 this.isRegisterClose = false;
                 this.isLoginClose = false;
+                this.isAddNewTypeDialogClose = false;
             },
             //弹出注册对话框
             showRegister(){
@@ -240,6 +269,42 @@
           //弹出登录框
           eventBus.$on('pop-login-dialog',()=>{
           	this.showLogin();
+          })
+          //弹出添加书签分类
+          eventBus.$on('show-add-new-type-dialog',()=>{
+          	this.isAddNewTypeDialogClose = true;
+          	this.isNewTypeValid = true;
+          	this.bookMarkType = '';
+            this.eventName = 'CHECK_BOOKMARK_NEW_TYPE';
+          })
+          eventBus.$on('bookMarkNewTypeInvalid',()=>{
+          	this.isNewTypeValid = false
+          })
+          eventBus.$on('closeBookMarkAddDialog',()=>{
+            this.isAddNewTypeDialogClose = false;
+          })
+
+          //书签填写不完整的提示
+          eventBus.$on('bookMarkInfoInvalid',(warnWord)=>{
+            this.popDialog('提交失败',warnWord,1,'HIDE_SELF_DIALOG');
+          })
+          //书签保存提示
+          eventBus.$on('bookMarkSaveState',(word)=>{
+          	if(word === 1){
+              this.popDialog('书签保存失败','该书签已经存在啦!',1,'HIDE_SELF_DIALOG');
+            }else if(word === 2){
+              this.popDialog('书签保存成功','恭喜!书签已经跑到数据库里啦!',1,'HIDE_SELF_DIALOG');
+            }else{
+              this.popDialog('书签保存失败','服务器提了一个错误!',1,'HIDE_SELF_DIALOG');
+            }
+          })
+          //空书签页
+          eventBus.$on('empty-bookmarklist',()=>{
+              this.popDialog('Oops~','您的书签空空如也，赶快去添加吧!',1,'HIDE_SELF_DIALOG');
+          })
+          //书签分类最多选择3项
+          eventBus.$on('bookmark-maxnum-exceeded',()=>{
+            this.popDialog('Oops~','书签分类最多选择3项哦!',1,'HIDE_SELF_DIALOG');
           })
         }
     }
@@ -376,6 +441,35 @@
       }
     }
 
+  }
+
+  .add-new-type-wrap{
+    width:90%;
+    margin: 40px auto 0 auto;
+    .add-new-type-invalid-word{
+      font-size: 12px;
+      color:red;
+      font-family: "Microsoft YaHei";
+      margin-left: 92px;
+      margin-top: 5px;
+    }
+    .add-new-type-word{
+      font-size: 16px;
+      font-family: "Microsoft YaHei";
+      color:#8b8b8b;
+      margin-right: 20px;
+    }
+    input{
+      height:30px;
+      border:1px solid #cbcbcb;
+      border-radius: 5px;
+      padding-left: 10px;
+      transition: all .5s ease;
+      width:60%;
+      &:focus{
+        border:1px solid #66aeff;
+      }
+    }
   }
 
   //动画过渡
