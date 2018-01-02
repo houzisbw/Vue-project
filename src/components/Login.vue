@@ -153,6 +153,8 @@
                   //改变vuex的状态
                   this.$store.commit('updateUserName',resp.data.username);
                   this.$emit('on-close');
+                  //页面刷新
+                  this.$router.go({path:this.$route.path})
               }
           })
       },

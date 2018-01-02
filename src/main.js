@@ -5,8 +5,11 @@ import App from './App'
 import router from './router'
 //导入vuex状态管理器
 import store from './store'
+//无限滚动差价你
+import infiniteScroll from  'vue-infinite-scroll'
 
 Vue.config.productionTip = false
+Vue.use(infiniteScroll)
 
 //引入css
 import './assets/css/reset.css'

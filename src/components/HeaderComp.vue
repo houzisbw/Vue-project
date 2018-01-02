@@ -306,6 +306,10 @@
           eventBus.$on('bookmark-maxnum-exceeded',()=>{
             this.popDialog('Oops~','书签分类最多选择3项哦!',1,'HIDE_SELF_DIALOG');
           })
+          //书签请求失败
+          eventBus.$on('bookmarklist-request-failed',()=>{
+            this.popDialog('Oops~','书签请求失败!请重试',1,'HIDE_SELF_DIALOG');
+          })
         }
     }
 </script>

@@ -187,6 +187,15 @@ router.post('/saveBookMark',function(req,res,next){
 
 //获取书签列表
 router.get('/getBookMarkList',function(req,res,next){
+  //注意：通过req拿到的参数都是 字符串 ，如果是数字参数需要parseInt转化为数值
+  //获取分页:page表示当前页数
+  var page = parseInt(req.param('pageIndex'),10);
+  //每一页多少条数据
+  var pageSize = parseInt(req.param('pageSize'),10);
+  //分页跳过多少条数据
+  let skip = (page - 1)*pageSize;
+  console.log('page '+page)
+  console.log('pageSize '+pageSize)
   //获取用户名
   let username = req.cookies.username;
   var query = User.where({username:username});
@@ -197,32 +206,46 @@ router.get('/getBookMarkList',function(req,res,next){
         status:-1
       })
     }else{
+      //找到用户
       if(doc){
         // 获取书签列表
         let bookMarkList = doc.bookMark;
         var retBookMarkList = [];
+        var cnt = 0;
+        //当前已经查询到的书签数量，必须小于等于pageSize
+        var bookMarkNum = 0;
         bookMarkList.forEach(function(item){
-          //给每个对象添加字段：favicon字段,通过url获取网站根目录，加上/favicon.ico即可
-          var faviconUrl = '';
-          var slashCnt = 0;
-          for(var i=0;i<item[0].url.length;i++){
-            faviconUrl += item[0].url[i];
-            if(item[0].url[i] === '/'){
-              slashCnt++;
-              //根目录截止
-              if(slashCnt === 3){
-                break;
+          cnt++;
+          //跳过指定量的数据
+          if(cnt>skip) {
+              //每次只能查询pageSize个书签
+              if(bookMarkNum < pageSize) {
+                //给每个对象添加字段：favicon字段,通过url获取网站根目录，加上/favicon.ico即可
+                var faviconUrl = '';
+                var slashCnt = 0;
+                for (var i = 0; i < item[0].url.length; i++) {
+                  faviconUrl += item[0].url[i];
+                  if (item[0].url[i] === '/') {
+                    slashCnt++;
+                    //根目录截止
+                    if (slashCnt === 3) {
+                      break;
+                    }
+                  }
+                }
+                faviconUrl += 'favicon.ico';
+                item[0].faviconUrl = faviconUrl;
+                retBookMarkList.push(item[0]);
+                bookMarkNum++;
               }
-            }
           }
-          faviconUrl += 'favicon.ico';
-          item[0].faviconUrl = faviconUrl;
-          retBookMarkList.push(item[0]);
         });
         res.json({
           status:1,
-          bookMarkList:retBookMarkList
+          bookMarkList:retBookMarkList,
+          bookMarkTotalNum:doc.bookMark.length
         })
+      //用户未找到
       }else{
         res.json({
           status:-1

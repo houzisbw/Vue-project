@@ -1,4 +1,5 @@
 <template>
+  <div class='fixed-layout' >
     <div class="book-mark" id="title-top">
       <div class="title" v-if="!isLogin">
         您还未登录，请<span class="login-word" @click="login">登录</span>后查看书签
@@ -8,6 +9,10 @@
       </div>
       <!--书签内容区域-->
       <div v-if="isLogin">
+          <!--加载中gif-->
+          <div class="is-loading" v-if="isBookMarkLoading">
+            <img src="./../assets/svg/loading-spinning-bubbles.svg">
+          </div>
           <div class="book-mark-content clearfix">
             <!--每一行标签数是响应式变化的-->
             <!--如果登录了才显示-->
@@ -49,6 +54,9 @@
               <div class="flex-padding">
               </div>
           </div>
+          <!--滚动加载多页，当该div距离视口底部距离小于0时触发加载事件-->
+          <!--<div v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="10">-->
+          <!--</div>-->
           <!--用于让底部和内容隔开一定距离-->
           <div class="bottom-padding">
           </div>
@@ -56,7 +64,9 @@
           <a class="to-top" @click="goTop()">
           </a>
       </div>
+
     </div>
+  </div>
 </template>
 
 <script>
@@ -66,11 +76,31 @@
         name: 'book-mark',
         data(){
             return{
-                markNum:39,
-                bookMarkList:[]
+                bookMarkList:[],
+                //书签页是否正在加载
+                isBookMarkLoading:false,
+                //滚动加载是否禁用
+                busy:false,
+                //当前页数,默认第一页
+                pageIndex:1,
+                //每一页书签容量
+                pageSize:18,
+                //书签总数
+                bookMarkTotalNum:0
+
             }
         },
         mounted(){
+        	//书签需要加载更多
+          eventBus.$on('BOOKMARK_LOAD_MORE',()=>{
+            //禁止再去滚动加载,true为禁止，false为恢复,第二个参数是是否显示loading图案
+            //emit可以传递参数列表，依次写在后面即可
+            eventBus.$emit('BOOKMARK_SCROLL_STATE',true,true);
+            setTimeout(() => {
+              this.pageIndex++;
+              this.getBookMarkList();
+            }, 1000);
+          });
         	//如果登录就从后台拿到书签信息
           if(this.isLogin){
           	this.getBookMarkList();
@@ -83,18 +113,24 @@
           },
           //书签数
           bookMarkCount(){
-        		return this.bookMarkList.length;
+        		return this.bookMarkTotalNum;
           }
-
+        },
+        watch: {
+          // 如果路由有变化，会再次执行该方法
+          '$route': 'fetchData'
         },
         methods:{
+        	  fetchData(){
+        	  	console.log('fetch data')
+            },
         	  //页面跳转
             jumpToNewPage(url){
             	window.open(url)
             },
             //回到页面顶端
             goTop:function(){
-                //是right-content外层的scrollTop,如果用锚点的话会对路由有影响，不能用
+                //如果用锚点的话会对路由有影响，不能用
                 document.querySelector('.right-content').scrollTop = 0;
             },
             //登录
@@ -104,18 +140,34 @@
             },
             //获取书签列表
             getBookMarkList(){
-              axios.get('/user/getBookMarkList').then((response)=>{
+            	//这里要添加加载中动画
+              this.isBookMarkLoading = true;
+              var param ={
+              	pageSize:this.pageSize,
+                pageIndex:this.pageIndex
+              }
+              //get发送参数要有key：params
+              axios.get('/user/getBookMarkList',{params:param}).then((response)=>{
+                  this.isBookMarkLoading = false;
+                  eventBus.$emit('BOOKMARK_SCROLL_STATE',false,true);
                   let status = response.data.status;
                   if(status === 1){
-                  	var listLength = response.data.bookMarkList.length;
+                    this.bookMarkList = this.bookMarkList.concat(response.data.bookMarkList);
+                    this.bookMarkTotalNum = response.data.bookMarkTotalNum;
+                    //如果是最后一页了额，禁用滚动插件，很重要
+                    if(response.data.bookMarkList.length < this.pageSize){
+                      eventBus.$emit('BOOKMARK_SCROLL_STATE',true,false);
+                    }
+                  	var listLength = this.bookMarkList.length;
                     if(listLength > 0){
-                      this.bookMarkList = response.data.bookMarkList;
+                      //this.bookMarkList = response.data.bookMarkList;
                     }else{
                     	//书签为空
                       eventBus.$emit('empty-bookmarklist');
                     }
+                  //请求失败
                   }else{
-
+                    eventBus.$emit('bookmarklist-request-failed');
                   }
               })
             }
@@ -126,6 +178,14 @@
 </script>
 
 <style scoped lang="less" type="text/less">
+  .fixed-layout{
+    //position: fixed;
+    height:100%;
+    // fixed状态下：100% - 320px
+    width:~'calc(100%)';
+    overflow-y: auto;
+  }
+
   .book-mark{
     width:80%;
     margin: 10px auto;
@@ -152,6 +212,12 @@
       flex-direction: row;
       //换行
       flex-wrap:wrap;
+    }
+    .is-loading{
+      height:400px;
+      width:400px;
+      margin: 200px auto;
+      text-align: center;
     }
   }
   //占位布局,让书签最后一行左对齐
@@ -255,6 +321,20 @@
     &:hover{
       cursor:pointer;
     }
+  }
+  .anchor{
+    @anchorHeight:30px;
+    height:@anchorHeight;
+    line-height: @anchorHeight;
+    background-color: #ffffff;
+    border-radius: 5px;
+    text-align: center;
+    color:#8b8b8b;
+    width:30%;
+    margin: 0 auto;
+  }
+  .anchor-show{
+    display: none;
   }
 
   //响应式，媒体查询
