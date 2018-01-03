@@ -310,6 +310,16 @@
           eventBus.$on('bookmarklist-request-failed',()=>{
             this.popDialog('Oops~','书签请求失败!请重试',1,'HIDE_SELF_DIALOG');
           })
+          //书签列表到达首页
+          eventBus.$on('page-num-state',(dir)=>{
+          	if(dir === 1){
+              this.popDialog('Oops~','已经是第一页啦~',1,'HIDE_SELF_DIALOG');
+            }else if(dir === 2){
+              this.popDialog('Oops~','已经是最后一页啦~',2,'HIDE_SELF_DIALOG');
+            }else if(dir === 3){
+              this.popDialog('Oops~','书签页码输入非法~',3,'HIDE_SELF_DIALOG');
+            }
+          })
         }
     }
 </script>
