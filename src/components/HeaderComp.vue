@@ -25,7 +25,7 @@
           <!--这里点击注册要弹出框，并初始化验证码，得调用注册组件的方法-->
           <li v-if="!userNickName" class="li-hover"><a href="#" @click="showRegister">注册</a></li>
         </ul>
-        <input type="text" class="banner-input" placeholder="组件名字">
+        <input type="text" class="banner-input" :placeholder="searchType" @keyup.enter="search" v-model.trim="searchInput">
       </div>
       <!--对话框模态框,遮罩也在里面-->
       <!--注意，不同的点击事件是在组件外部进行确定，内部只需触发一个点击方法即可-->
@@ -81,12 +81,13 @@
         },
         data(){
             return {
+            	  //搜索input数据
+                searchInput:'',
             	  //添加书签分类模态框相关
                 isAddNewTypeDialogClose:false,
                 isNewTypeValid:true,
                 //input的数据
                 bookMarkType:'',
-
                 //对话框关闭与否
                 isDialogClose:false,
                 isRegisterClose:false,
@@ -132,9 +133,25 @@
           userNickName:function(){
             //这里模块里getters的方法会被注册为全局，不用加模块名字了
             return this.$store.getters.getUserName;
+          },
+          //搜索类型动态变化
+          searchType:function(){
+          	if(this.$route.path === '/user/showbookmark'){
+          		return '搜索书签标题，链接'
+            }else{
+
+            }
           }
+
         },
         methods:{
+        	  //搜索
+            search(){
+            	//如果是搜索书签页面
+            	if(this.$route.path === '/user/showbookmark'){
+                  eventBus.$emit('search-content-bookmark',this.searchInput);
+              }
+            },
         	  //用户下拉列表的点击事件处理函数
             eventHandler:function(eventName){
             	  switch(eventName){
@@ -214,6 +231,13 @@
                 case 'CHECK_BOOKMARK_NEW_TYPE':{
                 	//检查新添加的书签名,已经除去首尾空格了
                   eventBus.$emit('checkNewTypeExist',this.bookMarkType);
+                	break;
+                }
+                //删除书签
+                case 'DELETE_BOOKMARK':{
+                  eventBus.$emit('deleteBookMarkConfirm');
+                  //隐藏对话框
+                  this.isDialogClose = false;
                 	break;
                 }
                 default:
@@ -315,10 +339,19 @@
           	if(dir === 1){
               this.popDialog('Oops~','已经是第一页啦~',1,'HIDE_SELF_DIALOG');
             }else if(dir === 2){
-              this.popDialog('Oops~','已经是最后一页啦~',2,'HIDE_SELF_DIALOG');
+              this.popDialog('Oops~','已经是最后一页啦~',1,'HIDE_SELF_DIALOG');
             }else if(dir === 3){
-              this.popDialog('Oops~','书签页码输入非法~',3,'HIDE_SELF_DIALOG');
+              this.popDialog('Oops~','书签页码输入非法~',1,'HIDE_SELF_DIALOG');
             }
+          })
+          //删除书签对话框
+          eventBus.$on('delete-bookmark',(url,title)=>{
+            this.popDialog('您确定要删除该书签?','书签链接: '+url+'<br/><br/> 书签标题: '+title,2,'DELETE_BOOKMARK');
+          })
+
+          //未知错误
+          eventBus.$on('unknown-error',()=>{
+            this.popDialog('Oops~','出现未知错误！',1,'HIDE_SELF_DIALOG');
           })
         }
     }

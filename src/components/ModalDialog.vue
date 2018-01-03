@@ -16,8 +16,10 @@
           {{title}}
         </div>
         <!--内容-->
-        <div class="content">
-          {{content}}
+        <div class="content" >
+          <!--这里是为了产生换行，专门用div的html，否则大括号内不会换行-->
+          <div v-html="content">
+          </div>
           <slot v-if="modalShow"></slot>
         </div>
         <!--确认取消还是确定-->
@@ -130,6 +132,8 @@
     min-height:120px;
     padding:20px;
     font-family: "Microsoft YaHei";
+    overflow: hidden;
+    word-break:break-all;
   }
   .confirm{
     height:@titleHeight;

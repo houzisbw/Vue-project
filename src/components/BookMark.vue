@@ -1,11 +1,12 @@
 <template>
-  <div class='fixed-layout' >
+  <div class='fixed-layout'>
     <div class="book-mark" id="title-top">
-      <div class="title" v-if="!isLogin">
+      <div class="title" v-if="!isLogin" :class="{'title-unlogin':!isLogin}">
         您还未登录，请<span class="login-word" @click="login">登录</span>后查看书签
       </div>
-      <div class="title" v-else>
-        <div class="title-num">所有书签,一共{{bookMarkCount}}个</div>
+      <div class="title" :class="defaultBookMarkShowType?'title-list-width':'title-grid-width'" v-else>
+        <div class="title-num" v-if="!bookmarkSearchKeyword">所有书签,一共{{bookMarkCount}}个</div>
+        <div class="title-num" v-else>已为您搜索到符合条件的书签{{bookMarkCount}}个</div>
         <div class="grid-show"
              :class="{'bookmark-type-button-active':!defaultBookMarkShowType}"
              @click="toggleShowType(false)"
@@ -79,9 +80,9 @@
                   <th style="width:100px">操作</th>
                 </tr>
                 <tr class='tr-data' v-for="(item,index) in bookMarkList">
-                  <td :title="item.title">
+                  <td :title="item.title" @click="jumpToNewPage(item.url)">
                       <span class="favicon-span"
-                            :style="{background:'url('+item.faviconUrl + ') center center no-repeat',
+                            :style="{background:'url('+item.faviconUrl + ')' + ' center center no-repeat',
                                     backgroundSize:'80% 80%'}">
                       </span>
                       <span class="title-line">{{item.title}}</span>
@@ -92,7 +93,13 @@
                       <li v-for="(itemType,index) in item.type">{{itemType.label}}</li>
                     </ul>
                   </td>
-                  <td>1</td>
+                  <td>
+                    <div class="delete-bookmark" title="删除该书签" @click="deleteBookMark(item.url,item.title)">
+                    </div>
+                    <!--data-clipboard-text是插件的属性-->
+                    <button class="copy-bookmark" title="复制书签链接"  :data-clipboard-text="item.url">
+                    </button>
+                  </td>
                 </tr>
               </table>
               <!--翻页按钮-->
@@ -130,12 +137,22 @@
       </div>
 
     </div>
+    <!--剪切成功的提示面板-->
+    <transition name="fade">
+      <div class="clip-success" v-if="clipSuccessShow">
+        <p class="clip-success-notice-title">提示&nbsp;:</p>
+        <p>{{clipSuccessUrl}}</p>
+        <p>已复制到您的剪切板</p>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script>
     import {eventBus} from './../eventBus'
     import axios from 'axios'
+    //引入Clipboard.js实现鼠标点击复制粘贴
+    import Clipboard from 'clipboard'
     export default {
         name: 'book-mark',
         data(){
@@ -154,11 +171,28 @@
                 //默认书签显示类型,false为卡片，true为列表
                 defaultBookMarkShowType:false,
                 //书签页数
-                pageNumInput:''
+                pageNumInput:'',
+                //要删除的书签url
+                bookMarkUrlToDelete:'',
+                //提示书签复制成功的信息
+                clipSuccessUrl:'',
+                clipSuccessShow:false,
+                clipSuccessShowTimerId:null,
+                //书签关键字，用于搜索,默认为空，
+                bookmarkSearchKeyword:''
             }
         },
         mounted(){
-        	//书签需要加载更多
+        	//获取搜索框传来的书签搜索输入数据
+          eventBus.$on('search-content-bookmark',(data)=>{
+              //进行搜索
+              this.bookmarkSearchKeyword = data;
+              //更新数据
+              this.pageIndex = 1;
+              this.bookMarkList = [];
+              this.getBookMarkList();
+          });
+          //书签需要加载更多
           eventBus.$on('BOOKMARK_LOAD_MORE',()=>{
             //禁止再去滚动加载,true为禁止，false为恢复,第二个参数是是否显示loading图案
             //emit可以传递参数列表，依次写在后面即可
@@ -167,6 +201,25 @@
               this.pageIndex++;
               this.getBookMarkList();
             }, 1000);
+          });
+          //确认删除书签
+          eventBus.$on('deleteBookMarkConfirm',()=>{
+          	  axios.post('/user/deleteBookMark',{url:this.bookMarkUrlToDelete}).then((response)=>{
+          	  	  let status = response.data.status;
+                  if(status === 1){
+                      //刷新数据,判断第几页,边界情况，当页只有1个书签，删除了得返回上一页
+                      var updatedPageIndex = Math.ceil((this.bookMarkTotalNum - 1) / this.pageSize);
+                      //删除了当页唯一一个书签
+                      if(updatedPageIndex < this.pageIndex){
+                        this.pageIndex = updatedPageIndex;
+                      }
+                      //更新数据
+                      this.bookMarkList = [];
+                      this.getBookMarkList();
+                  }else{
+                      eventBus.$emit('unknown-error');
+                  }
+              });
           });
         	//如果登录就从后台拿到书签信息
           if(this.isLogin){
@@ -192,6 +245,16 @@
           '$route': 'fetchData'
         },
         methods:{
+        	  //复制书签链接
+            copyPageUrl(url){
+
+            },
+        	  //删除书签
+            deleteBookMark(url,title){
+            	//弹出对话框
+              eventBus.$emit('delete-bookmark',url,title);
+              this.bookMarkUrlToDelete = url;
+            },
         	  //跳页
             jumpToPage(){
               //检查书签页数输入是否合法:数字且>=1 且 <=最大页数
@@ -246,6 +309,7 @@
                 this.pageIndex = 1;
                 this.bookMarkList = [];
                 this.getBookMarkList();
+
             	//卡片
               }else{
                 //启用滚动加载插件
@@ -279,7 +343,8 @@
               this.isBookMarkLoading = true;
               var param ={
               	pageSize:this.pageSize,
-                pageIndex:this.pageIndex
+                pageIndex:this.pageIndex,
+                keyword:this.bookmarkSearchKeyword
               }
               //get发送参数要有key：params
               axios.get('/user/getBookMarkList',{params:param}).then((response)=>{
@@ -304,9 +369,37 @@
                     if(listLength > 0){
                       //this.bookMarkList = response.data.bookMarkList;
                     }else{
-                    	//书签为空
-                      eventBus.$emit('empty-bookmarklist');
+                    	//如果是在搜索状态下删除了完了，不触发书签为空的提示
+                    	if(this.bookmarkSearchKeyword){
+                        this.bookmarkSearchKeyword = '';
+                        //重新加载数据,注意各种数据初始化,列表每页也只有18条数据
+                        this.pageIndex = 1;
+                        this.bookMarkList = [];
+                        this.getBookMarkList();
+                      }else{
+                        //提示书签为空
+                        eventBus.$emit('empty-bookmarklist');
+                      }
                     }
+                    //进行剪贴板操作
+                    //注意这里需要延时一定时间，否则无法获取到全部节点，因为还未渲染成功
+                    var self = this;
+                    setTimeout(function(){
+                      //初始化剪贴板,获取所有剪切板按钮
+                      var btns = document.querySelectorAll('.copy-bookmark');
+                      var clipboard = new Clipboard(btns);
+                      //剪切成功
+                      clipboard.on('success',function(e){
+                      	  clearTimeout(self.clipSuccessShowTimerId);
+                          self.clipSuccessUrl = e.text;
+                          self.clipSuccessShow = true;
+                          //2秒后消失面板
+                          self.clipSuccessShowTimerId = setTimeout(()=>{
+                            self.clipSuccessShow = false;
+                          },2000)
+                      })
+                    },300)
+
                   //请求失败
                   }else{
                     eventBus.$emit('bookmarklist-request-failed');
@@ -326,18 +419,52 @@
     // fixed状态下：100% - 320px
     width:~'calc(100%)';
     overflow-y: auto;
+    .clip-success{
+      position: fixed;
+      right:30px;
+      //70px
+      top:70px;
+      //允许用户点击该div下面的元素
+      pointer-events:none;
+      width:220px;
+      min-height:100px;
+      word-break: break-all;
+      background: url('./../assets/icon/clip-success.png') 5% center no-repeat rgba(44, 164, 65, 0.8);
+      background-size: 15% 30%;
+      border-radius: 5px;
+      padding:10px 10px 10px 90px;
+      color:#fff;
+      font-size: 14px;
+
+      p{
+        margin-bottom: 10px;
+      }
+      .clip-success-notice-title{
+        margin-top: 10px;
+        font-size: 18px;
+      }
+    }
   }
 
   .book-mark{
     width:80%;
     margin: 10px auto;
     @titleHeight:40px;
+    //未登录时标题居中
+    .title-unlogin{
+      text-align: center!important;
+    }
+    .title-list-width{
+      min-width: 600px;
+    }
+    .title-grid-width{
+      min-width: 340px;
+    }
     .title{
       box-sizing: border-box;
       -moz-box-sizing: border-box;
       -webkit-box-sizing: border-box;
       width:100%;
-      min-width: 600px;
       height:@titleHeight;
       border-radius: 5px;
       background-color: #fff;
@@ -469,6 +596,29 @@
         }
         & tr:last-child td:last-child{
           //border-radius: 0 0 @borderRadius 0;
+        }
+
+        //书签删除
+        .delete-bookmark{
+          width:30px;
+          height:30px;
+          background: url('./../assets/icon/delete-bookmark.png') center center no-repeat;
+          background-size: 80% 80%;
+          margin-left: -10px;
+          cursor: pointer;
+          float:left;
+        }
+        .copy-bookmark{
+          width:30px;
+          height:30px;
+          background: url('./../assets/icon/copy-booktitle.png') center center no-repeat;
+          background-size: 80% 80%;
+          cursor: pointer;
+          float:left;
+          position: relative;
+          top:-1px;
+          border: none;
+          outline: none;
         }
       }
       //翻页
@@ -692,6 +842,17 @@
       min-width: 340px!important;
     }
 
+  }
+
+  //动画效果
+  .fade-enter,.fade-leave-to{
+    opacity: 0;
+  }
+  .fade-enter-to,.fade-leave{
+    opacity: 1;
+  }
+  .fade-enter-active,.fade-leave-active{
+    transition: opacity .5s linear;
   }
 
 </style>

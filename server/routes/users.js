@@ -188,14 +188,17 @@ router.post('/saveBookMark',function(req,res,next){
 //获取书签列表
 router.get('/getBookMarkList',function(req,res,next){
   //注意：通过req拿到的参数都是 字符串 ，如果是数字参数需要parseInt转化为数值
+  //搜索关键字
+  var keyword = req.param('keyword');
+  console.log(keyword)
   //获取分页:page表示当前页数
   var page = parseInt(req.param('pageIndex'),10);
   //每一页多少条数据
   var pageSize = parseInt(req.param('pageSize'),10);
   //分页跳过多少条数据
   let skip = (page - 1)*pageSize;
-  console.log('page '+page)
-  console.log('pageSize '+pageSize)
+  //console.log('page '+page)
+  //console.log('pageSize '+pageSize)
   //获取用户名
   let username = req.cookies.username;
   var query = User.where({username:username});
@@ -215,7 +218,15 @@ router.get('/getBookMarkList',function(req,res,next){
         //当前已经查询到的书签数量，必须小于等于pageSize
         var bookMarkNum = 0;
         bookMarkList.forEach(function(item){
-          cnt++;
+          //如果是正常查询，非搜索的查询
+          if(keyword === ''){
+            cnt++;
+          }else{
+            //搜索状态下的查询，需要过滤:只有标题或链接包含关键字的才算
+            if(item[0].url.indexOf(keyword) !== -1 || item[0].title.indexOf(keyword)!==-1){
+              cnt++;
+            }
+          }
           //跳过指定量的数据
           if(cnt>skip) {
               //每次只能查询pageSize个书签
@@ -235,15 +246,23 @@ router.get('/getBookMarkList',function(req,res,next){
                 }
                 faviconUrl += 'favicon.ico';
                 item[0].faviconUrl = faviconUrl;
-                retBookMarkList.push(item[0]);
-                bookMarkNum++;
+                if(keyword===undefined) {
+                  retBookMarkList.push(item[0]);
+                  bookMarkNum++;
+                }else{
+                  if(item[0].url.indexOf(keyword) !== -1 || item[0].title.indexOf(keyword)!==-1){
+                    retBookMarkList.push(item[0]);
+                    bookMarkNum++;
+                  }
+                }
               }
           }
         });
+        //cnt是最终符合条件的书签总数
         res.json({
           status:1,
           bookMarkList:retBookMarkList,
-          bookMarkTotalNum:doc.bookMark.length
+          bookMarkTotalNum:cnt
         })
       //用户未找到
       }else{
@@ -252,6 +271,49 @@ router.get('/getBookMarkList',function(req,res,next){
         })
       }
 
+    }
+  })
+})
+
+//删除书签
+router.post('/deleteBookMark',function(req,res,next){
+  var url = req.body.url;
+  var username = req.cookies.username;
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+      //找到用户
+      if(doc){
+        //搜寻与url相同的书签
+        let bookMarkList = doc.bookMark;
+        for(var i=0;i<bookMarkList.length;i++){
+          if(bookMarkList[i][0].url === url){
+            doc.bookMark.splice(i,1);
+            break;
+          }
+        }
+        doc.save(function(err,docSave){
+          if(err){
+            res.json({
+              status:-1
+            })
+          }else{
+            //删除成功
+            res.json({
+              status:1
+            })
+          }
+        })
+      }else{
+        //用户未找到
+        res.json({
+          status:-1
+        })
+      }
     }
   })
 })
