@@ -144,7 +144,16 @@
           }
 
         },
+        watch: {
+          // 如果路由有变化，会执行该方法
+          '$route': 'routeChangeEvent'
+        },
         methods:{
+        	  //路由变化触发的事件
+            routeChangeEvent(){
+            	//清空搜索框内容
+              this.searchInput = '';
+            },
         	  //搜索
             search(){
             	//如果是搜索书签页面
