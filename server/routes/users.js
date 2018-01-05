@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var bookMarkUtil = require('../utils/bookMarkUtil')
 //引入用户数据模型
 var User = require('./../models/user');
 //引入配置信息
@@ -159,13 +160,17 @@ router.post('/saveBookMark',function(req,res,next){
             status: 1
           })
         }else{
+          //获取当前时间,毫秒数
+          var date = new Date();
+          var millsec = date.getTime().toString();
           //保存书签
           var bm = {
             url:url,
             title:title,
             isPublic:isPublic,
             screenShotName:screenShotName,
-            type:markType
+            type:markType,
+            date:millsec
           }
           doc.bookMark.push(bm);
           doc.save(function(err1,doc1){
@@ -190,7 +195,8 @@ router.get('/getBookMarkList',function(req,res,next){
   //注意：通过req拿到的参数都是 字符串 ，如果是数字参数需要parseInt转化为数值
   //搜索关键字
   var keyword = req.param('keyword');
-  console.log(keyword)
+  //排序方向
+  var sortDir = req.param('sort');
   //获取分页:page表示当前页数
   var page = parseInt(req.param('pageIndex'),10);
   //每一页多少条数据
@@ -217,6 +223,15 @@ router.get('/getBookMarkList',function(req,res,next){
         var cnt = 0;
         //当前已经查询到的书签数量，必须小于等于pageSize
         var bookMarkNum = 0;
+        //这里要排序
+        if(sortDir === 'ascend'){
+          //升序
+          bookMarkList.sort(bookMarkUtil.sortUp);
+        }else{
+          //降序
+          bookMarkList.sort(bookMarkUtil.sortDown);
+        }
+
         bookMarkList.forEach(function(item){
           //如果是正常查询，非搜索的查询
           if(keyword === ''){
@@ -232,20 +247,7 @@ router.get('/getBookMarkList',function(req,res,next){
               //每次只能查询pageSize个书签
               if(bookMarkNum < pageSize) {
                 //给每个对象添加字段：favicon字段,通过url获取网站根目录，加上/favicon.ico即可
-                var faviconUrl = '';
-                var slashCnt = 0;
-                for (var i = 0; i < item[0].url.length; i++) {
-                  faviconUrl += item[0].url[i];
-                  if (item[0].url[i] === '/') {
-                    slashCnt++;
-                    //根目录截止
-                    if (slashCnt === 3) {
-                      break;
-                    }
-                  }
-                }
-                faviconUrl += 'favicon.ico';
-                item[0].faviconUrl = faviconUrl;
+                item[0].faviconUrl = bookMarkUtil.getFaviconUrl(item[0].url);
                 if(keyword===undefined) {
                   retBookMarkList.push(item[0]);
                   bookMarkNum++;
@@ -262,7 +264,8 @@ router.get('/getBookMarkList',function(req,res,next){
         res.json({
           status:1,
           bookMarkList:retBookMarkList,
-          bookMarkTotalNum:cnt
+          bookMarkTotalNum:cnt,
+          keyword:keyword
         })
       //用户未找到
       }else{
@@ -318,13 +321,76 @@ router.post('/deleteBookMark',function(req,res,next){
   })
 })
 
+//获取热门书签
+router.get('/hotbookmark',function(req,res,next){
+    var bookMarkSet = {};
+    //要返回的数组
+    var retBookMarkList = []
+    //获取收藏数前10的书签,搜索所有用户
+    //docs是查询的结果数组
+    User.find({},function(err,docs){
+        if(err){
+          res.json({
+            status:-1
+          })
+        }else{
+          //找到用户
+          if(docs){
+            //遍历每个用户的每个书签列表，计算书签被收藏次数
+            docs.forEach(function(item,index){
+                var bookMarkList = item.bookMark;
+                bookMarkList.forEach(function(itemMark,indexMark){
+                  var bookUrl = itemMark[0].url;
+                  if(!bookMarkSet.hasOwnProperty(bookUrl)){
+                    bookMarkSet[bookUrl]={
+                      title:itemMark[0].title,
+                      url:itemMark[0].url,
+                      screenShotName:itemMark[0].screenShotName,
+                      num:1
+                    };
+                  }else{
+                    bookMarkSet[bookUrl].num++;
+                  }
+                })
+            })
+            //排序,构建对象数组,对象不能直接按value排序
+            var objArray = [];
+            for(var key in bookMarkSet){
+              objArray.push({
+                url:key,
+                num:bookMarkSet[key].num,
+                title:bookMarkSet[key].title,
+                screenShotName:bookMarkSet[key].screenShotName,
+                faviconUrl:bookMarkUtil.getFaviconUrl(key)
+              })
+            }
+            objArray.sort(bookMarkUtil.sortBookMarkCount);
+            var cnt = 0;
+            var MAX_NUM = 10;
+            for(var i=0;i<objArray.length;i++){
+              if(cnt<MAX_NUM){
+                retBookMarkList.push(objArray[i]);
+              }
+              cnt++;
+            }
+            res.json({
+              bookMarkList:retBookMarkList,
+              status:1
+            })
+          }else{
+            res.json({
+              status:-1
+            })
+          }
+        }
+    })
 
+});
 
 /* GET users listing. */
 // router.get('/', function(req, res, next) {
 //   res.send('respond with a resource');
 // });
-
 
 
 module.exports = router;

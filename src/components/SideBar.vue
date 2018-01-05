@@ -56,8 +56,8 @@
                           menuLink:'/user/addbookmark'
                       },
                       {
-                          menuName:'修改书签',
-                          menuLink:'/user/modfifybookmark'
+                          menuName:'导入书签',
+                          menuLink:'/user/importbookmark'
                       }
                     ]
                   },
@@ -209,7 +209,7 @@
           width:100%;
         }
         .subMenuActive{
-          border-left:@borderWidth solid #fff;
+          border-left:@borderWidth solid #f6f6f6;
         }
       }
     }

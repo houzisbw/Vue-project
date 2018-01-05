@@ -7,7 +7,9 @@
       <div class="left-content">
         <side-bar></side-bar>
       </div>
-      <div class="right-content" >
+      <div class="right-content">
+        <div class="right-content-overlay" v-if="isDefaultBg">
+        </div>
         <router-view ></router-view>
         <!--滚动加载多页，当该div距离视口底部距离小于0时触发加载事件-->
         <div v-infinite-scroll="loadMore"  infinite-scroll-disabled="busy" infinite-scroll-distance="10" class="loading-div">
@@ -37,11 +39,16 @@ export default {
   	return {
   		busy:false,
       loading:false
+
+    }
+  },
+  computed:{
+    isDefaultBg(){
+    	return this.$route.path === '/'
     }
   },
   mounted:function(){
     eventBus.$on('BOOKMARK_SCROLL_STATE',(state,isLoadingShow)=>{
-    	console.log(state);
     	this.busy = state;
     	this.loading = isLoadingShow;
     });
@@ -75,6 +82,14 @@ export default {
     /*auto只在需要的时候出现滚动轴，scroll则是一直有滚动轴*/
     overflow-y: auto;
     padding:20px 0 20px 20px;
+  }
+  .right-content-overlay{
+    position: absolute;
+    left:0;
+    top:0;
+    right:0;
+    bottom:0;
+    background-color: rgba(0,0,0,0.3);
   }
   .left-content{
     float:left;

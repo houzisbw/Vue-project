@@ -2,7 +2,7 @@
 <template>
   <div>
       <div class="banner">
-        <a href="#"><img src="./../assets/icon/banner-logo.png"></a>
+        <a href="/"><img src="./../assets/icon/banner-logo.png"></a>
         <span class="banner-word"><img src="./../assets/icon/banner-word.png"></span>
         <ul class="banner-ul">
           <li v-if="!userNickName" class="li-hover"><a href="#" @click="showLogin">登录</a></li>
@@ -158,7 +158,12 @@
             search(){
             	//如果是搜索书签页面
             	if(this.$route.path === '/user/showbookmark'){
-                  eventBus.$emit('search-content-bookmark',this.searchInput);
+            		  //如果登录了
+            		  if(this.$store.getters.getUserName) {
+                    eventBus.$emit('search-content-bookmark', this.searchInput);
+                  }else{
+                    this.popDialog('( ･´ω`･ )','请先登录再搜索书签哦!',1,'HIDE_SELF_DIALOG');
+                  }
               }
             },
         	  //用户下拉列表的点击事件处理函数
@@ -247,6 +252,13 @@
                   eventBus.$emit('deleteBookMarkConfirm');
                   //隐藏对话框
                   this.isDialogClose = false;
+                	break;
+                }
+                //书签搜索为空
+                case 'BOOKMARK_SEARCH_EMPTY':{
+                  //隐藏对话框
+                  this.isDialogClose = false;
+                  eventBus.$emit('bookmarkEmptyAndRefreshData');
                 	break;
                 }
                 default:
@@ -361,6 +373,11 @@
           //未知错误
           eventBus.$on('unknown-error',()=>{
             this.popDialog('Oops~','出现未知错误！',1,'HIDE_SELF_DIALOG');
+          })
+
+          //书签搜索为空
+          eventBus.$on('search-result-empty',()=>{
+            this.popDialog('╮(╯﹏╰）╭','没有找到符合您要求的书签哦！',1,'BOOKMARK_SEARCH_EMPTY');
           })
         }
     }

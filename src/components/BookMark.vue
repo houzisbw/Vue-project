@@ -72,12 +72,18 @@
           <div v-else>
             <div class="book-mark-content-line clearfix">
               <table>
-                <tr>
+                <tr v-if="!isBookMarkLoading">
                   <th>标题</th>
                   <th>链接</th>
                   <th>分类</th>
+                  <th style="width:100px;position: relative;cursor:pointer"
+                      title="点击可进行日期排序"
+                      @click="sortByDate"
+                  >添加于
+                    <img  class="th-sort" src="./../assets/icon/sort.png">
+                  </th>
                   <!--最后一栏固定宽度-->
-                  <th style="width:100px">操作</th>
+                  <th style="width:50px">操作</th>
                 </tr>
                 <tr class='tr-data' v-for="(item,index) in bookMarkList">
                   <td :title="item.title" @click="jumpToNewPage(item.url)">
@@ -93,6 +99,11 @@
                       <li v-for="(itemType,index) in item.type">{{itemType.label}}</li>
                     </ul>
                   </td>
+                  <!--添加时间-->
+                  <td>
+                    <!--过滤器格式化时间-->
+                    {{item.date | dateFormatFromMillsec}}
+                  </td>
                   <td>
                     <div class="delete-bookmark" title="删除该书签" @click="deleteBookMark(item.url,item.title)">
                     </div>
@@ -103,7 +114,7 @@
                 </tr>
               </table>
               <!--翻页按钮-->
-              <div class="pagination">
+              <div class="pagination" v-if="!isBookMarkLoading">
                 <div class="pagination-wrap">
                   <!--当前页/总页数-->
                   <div class="page-num">
@@ -153,6 +164,8 @@
     import axios from 'axios'
     //引入Clipboard.js实现鼠标点击复制粘贴
     import Clipboard from 'clipboard'
+    //引入日期格式化js
+    import {formatDateFromMillsec} from './../utils/dateFormat'
     export default {
         name: 'book-mark',
         data(){
@@ -179,10 +192,26 @@
                 clipSuccessShow:false,
                 clipSuccessShowTimerId:null,
                 //书签关键字，用于搜索,默认为空，
-                bookmarkSearchKeyword:''
+                bookmarkSearchKeyword:'',
+                //是否处于删除状态,用于区分是删除还是搜索状态
+                isInDeleteState:false,
+                //按日期排序的flag,true为升序，false为降序
+                sortFlag:true
             }
         },
+        //过滤器
+        filters:{
+            dateFormatFromMillsec:formatDateFromMillsec
+        },
         mounted(){
+        	//书签搜索为空以及重新加载数据
+          eventBus.$on('bookmarkEmptyAndRefreshData',()=>{
+              this.bookmarkSearchKeyword = '';
+              //重新加载数据,注意各种数据初始化,列表每页也只有18条数据
+              this.pageIndex = 1;
+              this.bookMarkList = [];
+              this.getBookMarkList();
+          });
         	//获取搜索框传来的书签搜索输入数据
           eventBus.$on('search-content-bookmark',(data)=>{
               //进行搜索
@@ -213,6 +242,8 @@
                       if(updatedPageIndex < this.pageIndex){
                         this.pageIndex = updatedPageIndex;
                       }
+                      //进入删除状态
+                      this.isInDeleteState = true;
                       //更新数据
                       this.bookMarkList = [];
                       this.getBookMarkList();
@@ -239,15 +270,20 @@
           bookMarkCount(){
         		return this.bookMarkTotalNum;
           }
+          //书签添加时间
+
         },
         watch: {
           // 如果路由有变化，会再次执行该方法
           '$route': 'fetchData'
         },
         methods:{
-        	  //复制书签链接
-            copyPageUrl(url){
-
+        	  //书签按日期排序
+            sortByDate(){
+            	this.pageIndex = 1;
+              this.bookMarkList = [];
+              this.sortFlag = !this.sortFlag;
+              this.getBookMarkList();
             },
         	  //删除书签
             deleteBookMark(url,title){
@@ -344,7 +380,9 @@
               var param ={
               	pageSize:this.pageSize,
                 pageIndex:this.pageIndex,
-                keyword:this.bookmarkSearchKeyword
+                keyword:this.bookmarkSearchKeyword,
+                //注意不能直接传bool值，否则后台解析为字符串
+                sort:this.sortFlag?'ascend':'descend'
               }
               //get发送参数要有key：params
               axios.get('/user/getBookMarkList',{params:param}).then((response)=>{
@@ -358,6 +396,15 @@
                   if(status === 1){
                     this.bookMarkList = this.bookMarkList.concat(response.data.bookMarkList);
                     this.bookMarkTotalNum = response.data.bookMarkTotalNum;
+                    //获取当前毫秒数
+                    var date = new Date();
+                    //注意这里返回的是数值，不是字符串
+                    var millsec = date.getTime();
+                    for(var i=0;i<this.bookMarkList.length;i++){
+                      this.bookMarkList[i].date = millsec - parseInt(this.bookMarkList[i].date);
+                    }
+
+
                     //如果是最后一页了额，禁用滚动插件，很重要
                     if(response.data.bookMarkList.length < this.pageSize){
                       //如果是列表
@@ -371,11 +418,18 @@
                     }else{
                     	//如果是在搜索状态下删除了完了，不触发书签为空的提示
                     	if(this.bookmarkSearchKeyword){
-                        this.bookmarkSearchKeyword = '';
-                        //重新加载数据,注意各种数据初始化,列表每页也只有18条数据
-                        this.pageIndex = 1;
-                        this.bookMarkList = [];
-                        this.getBookMarkList();
+                    		//如果是删除状态,这里区分是为了要使得搜索结果为空时弹出对话框提示
+                    		if(this.isInDeleteState){
+                          this.bookmarkSearchKeyword = '';
+                          //重新加载数据,注意各种数据初始化,列表每页也只有18条数据
+                          this.pageIndex = 1;
+                          this.bookMarkList = [];
+                          this.getBookMarkList();
+                          this.isInDeleteState = false;
+                        }else{
+                          //搜索状态
+                          eventBus.$emit('search-result-empty');
+                        }
                       }else{
                         //提示书签为空
                         eventBus.$emit('empty-bookmarklist');
@@ -413,12 +467,20 @@
 </script>
 
 <style scoped lang="less" type="text/less">
+  .th-sort{
+    position: absolute;
+    right:20%;
+    width:20px;
+    height:20px;
+    top:20px;
+  }
   .fixed-layout{
     //position: fixed;
     height:100%;
     // fixed状态下：100% - 320px
     width:~'calc(100%)';
     overflow-y: auto;
+    overflow-x: hidden;
     .clip-success{
       position: fixed;
       right:30px;
@@ -569,6 +631,7 @@
             color: #717171;
             padding-left:10px;
           }
+          transition: all .5s ease;
           &:hover{
             background-color: #f6f6f6;
           }
@@ -667,12 +730,12 @@
           }
           .prev-page{
             background: url('./../assets/icon/prev.png') center center no-repeat rgba(0,0,0,.05);
-            background-size: 60% 60%;
+            background-size: 40% 40%;
             border-right:1px solid #cbcbcb;
           }
           .next-page{
             background: url('./../assets/icon/next.png') center center no-repeat rgba(0,0,0,.05);
-            background-size: 60% 60%;
+            background-size: 40% 40%;
           }
           .page-input{
             height:38px;
@@ -794,7 +857,7 @@
       padding: 4px 8px;
       border-radius: 5px;
       color:#fff;
-      background-color: #bdbdbd;
+      background-color: #75a5bd;
       line-height: 20px;
       margin-bottom: 5px;
       position: relative;

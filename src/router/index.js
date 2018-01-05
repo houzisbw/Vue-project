@@ -3,6 +3,9 @@ import Router from 'vue-router'
 import BookMark from '@/components/BookMark'
 import AddBookMark from '@/components/AddBookMark'
 import User from  '@/components/User'
+import HotBookMark from '@/components/HotBookMark'
+import ImportBookMark from '@/components/ImportBookMark'
+import Default from '@/components/Default'
 
 Vue.use(Router)
 
@@ -20,8 +23,20 @@ export default new Router({
         {
           path:'addbookmark',
           component:AddBookMark
+        },
+        {
+          path:'hotbookmark',
+          component:HotBookMark
+        },
+        {
+          path:'importbookmark',
+          component:ImportBookMark
         }
       ]
+    },
+    {
+      path:'/',
+      component:Default
     }
   ]
 })

@@ -5,7 +5,7 @@ import App from './App'
 import router from './router'
 //导入vuex状态管理器
 import store from './store'
-//无限滚动差价你
+//无限滚动插件
 import infiniteScroll from  'vue-infinite-scroll'
 
 Vue.config.productionTip = false

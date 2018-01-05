@@ -13,7 +13,9 @@ var userSchema = new mongoose.Schema({
       title:String,
       isPublic:String,
       screenShotName:String,
-      type:Array
+      type:Array,
+      //添加的时间，秒数
+      date:String
     }]
 });
 //这里第一个参数是数据库collection的名字(users)，User=>users，会自动映射
