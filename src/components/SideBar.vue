@@ -8,6 +8,7 @@
               <li v-for="(subitem,subindex) in item.subMenu"  :key="subitem.menuName" >
                 <router-link :to="subitem.menuLink"
                              class="second-a"
+                             :style="{background: 'url(' + subitem.menuIcon + ') 27% center no-repeat',backgroundSize: '20px 20px'}"
                              active-class="subMenuActive">
                   {{subitem.menuName}}
                 </router-link>
@@ -43,41 +44,48 @@
                     subMenu:[
                       {
                         menuName:'热门书签',
-                        menuLink:'/user/hotbookmark'
+                        menuLink:'/user/hotbookmark',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
 
                       },
                       {
                           menuName:'我的书签',
-                          menuLink:'/user/showbookmark'
+                          menuLink:'/user/showbookmark',
+                          menuIcon:require('./../assets/icon/mine-bookmark.png')
 
                       },
                       {
                           menuName:'添加书签',
-                          menuLink:'/user/addbookmark'
+                          menuLink:'/user/addbookmark',
+                          menuIcon:require('./../assets/icon/add-bookmark.png')
                       },
                       {
                           menuName:'导入书签',
-                          menuLink:'/user/importbookmark'
+                          menuLink:'/user/importbookmark',
+                          menuIcon:require('./../assets/icon/import-bookmark.png')
                       }
                     ]
                   },
                   {
-                    menuName:'百度地图',
-                    menuIcon:'sidebar-book',
-                    menuOpenIcon:'sidebar-book-open',
+                    menuName:'双色球',
+                    menuIcon:'sidebar-double-color',
+                    menuOpenIcon:'sidebar-double-color-open',
                     isActive:false,
                     subMenu:[
                       {
                         menuName:'添加地图',
-                        menuLink:'/d'
+                        menuLink:'/d',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       },
                       {
                         menuName:'查看地图',
-                        menuLink:'/e'
+                        menuLink:'/e',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       },
                       {
                         menuName:'修改地图',
-                        menuLink:'/f'
+                        menuLink:'/f',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       }
                     ]
                   },
@@ -89,15 +97,18 @@
                     subMenu:[
                       {
                         menuName:'添加地图',
-                        menuLink:'/t'
+                        menuLink:'/t',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       },
                       {
                         menuName:'查看地图',
-                        menuLink:'/y'
+                        menuLink:'/y',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       },
                       {
                         menuName:'修改地图',
-                        menuLink:'/u'
+                        menuLink:'/u',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
                       }
                     ]
                   }
@@ -174,12 +185,25 @@
         //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
         background-size:30px 30px,20px 20px;
       }
+      //双色球
+      .sidebar-double-color{
+        background: url('./../assets/icon/double-color.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-right.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
+      .sidebar-double-color-open{
+        background: url('./../assets/icon/double-color.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-down.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
       .second-level{
         //给ul加padding会导致动画跳跃，因为height不包含padding
         //padding-top: 20px;
         //padding-bottom: 20px;
         text-align: center;
-        background-color: #6b9aff;
+        background-color: #9ac3d7;
         //这个很关键，不隐藏掉溢出的内容的话菜单会显示重叠
         overflow: hidden;
         //内阴影
@@ -197,12 +221,12 @@
           padding:20px 30px 20px 20px;
           border-left:@borderWidth solid transparent;
           transition: border-left 0.5s;
-          color:#fff;
+          color: #ffffff;
           &:hover{
             border-left:@borderWidth solid #fff;
           }
-          background: url('./../assets/icon/star.png') 27% center no-repeat;
-          background-size: 20px 20px;
+          //background: url('./../assets/icon/star.png') 27% center no-repeat;
+          //background-size: 20px 20px;
         }
 
         li{

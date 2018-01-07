@@ -4,10 +4,14 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
+var schedule = require('node-schedule');
 
 var index = require('./routes/index');
 var users = require('./routes/users');
 var phantom = require('./routes/phantom');
+//双色球爬虫接口,定时执行
+var getLotteryData = require('./crawler/lotteryCrawler');
+schedule.scheduleJob('* * * * *',getLotteryData.getLotteryDataWeekly)
 
 var app = express();
 

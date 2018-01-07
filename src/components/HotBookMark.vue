@@ -13,15 +13,15 @@
         <div class="book-mark-content clearfix">
             <!--每一行标签数是响应式变化的-->
             <!--如果登录了才显示-->
-            <div class="mark-wrap" v-for="(item,index) in bookMarkList">
+            <div class="mark-wrap" v-for="(item,index) in bookMarkList" :class="index === 0 ? 'first-border':(index === 1?'second-border':(index===2?'third-border':''))">
               <!--书签标题-->
-              <div class="mark-title" :title="item.title">
+              <div class="mark-title" :title="item.title" >
                   <span class="title-favicon"
                         :style="{background:'url('+item.faviconUrl + ') center center no-repeat',
                                   backgroundSize:'24px 24px'}"
                   >
                   </span>
-                {{item.title}}
+                <span :class="index === 0?'first-color':(index===1?'second-color':(index===2?'third-color':''))">{{item.title}}</span>
               </div>
               <!--书签截图-->
               <div class="mark-screen-shot"
@@ -223,6 +223,15 @@
       background-size: 24px 24px;
     }
   }
+  .first-border{
+    border: 5px solid #ffd621 !important;
+  }
+  .second-border{
+    border: 5px solid #b4b4b4!important;
+  }
+  .third-border{
+    border: 5px solid #ff9757!important;
+  }
   .bottom-padding{
     height:100px;
     width:100%;
@@ -279,6 +288,18 @@
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
+    .first-color{
+      color: #ffdc1c;
+      font-weight: bold;
+    }
+    .second-color{
+      color: #b4b4b4;
+      font-weight: bold;
+    }
+    .third-color{
+      color: #ff9757;
+      font-weight: bold;
+    }
   }
   .mark-screen-shot{
     height:175px;
