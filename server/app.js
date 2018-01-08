@@ -11,7 +11,7 @@ var users = require('./routes/users');
 var phantom = require('./routes/phantom');
 //双色球爬虫接口,定时执行
 var getLotteryData = require('./crawler/lotteryCrawler');
-schedule.scheduleJob('* * * * *',getLotteryData.getLotteryDataWeekly)
+schedule.scheduleJob('50 23 * * 2,4,7',getLotteryData.getLotteryDataWeekly)
 
 var app = express();
 

@@ -6,6 +6,8 @@ import User from  '@/components/User'
 import HotBookMark from '@/components/HotBookMark'
 import ImportBookMark from '@/components/ImportBookMark'
 import Default from '@/components/Default'
+import Lottery from '@/components/lottery/Lottery'
+import SmartChoose from '@/components/lottery/SmartChoose'
 
 Vue.use(Router)
 
@@ -34,6 +36,18 @@ export default new Router({
         }
       ]
     },
+    //lottery路由，负责双色球
+    {
+      path:'/lottery',
+      component:Lottery,
+      children:[
+        {
+          path:'smartChooseLottery',
+          component:SmartChoose
+        }
+      ]
+    },
+    //根路径
     {
       path:'/',
       component:Default

@@ -73,19 +73,19 @@
                     isActive:false,
                     subMenu:[
                       {
-                        menuName:'添加地图',
-                        menuLink:'/d',
-                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                        menuName:'选号分析',
+                        menuLink:'/lottery/smartChooseLottery',
+                        menuIcon:require('./../assets/icon/lotterysmart.png')
                       },
                       {
-                        menuName:'查看地图',
-                        menuLink:'/e',
-                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                        menuName:'历史查询',
+                        menuLink:'/lottery/lotteryHistorySearch',
+                        menuIcon:require('./../assets/icon/lotteryhistory.png')
                       },
                       {
-                        menuName:'修改地图',
-                        menuLink:'/f',
-                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                        menuName:'专家预测',
+                        menuLink:'/lottery/lotteryExpertPredict',
+                        menuIcon:require('./../assets/icon/lotteryexpert.png')
                       }
                     ]
                   },
@@ -203,7 +203,7 @@
         //padding-top: 20px;
         //padding-bottom: 20px;
         text-align: center;
-        background-color: #9ac3d7;
+        background-color: #74bbff;
         //这个很关键，不隐藏掉溢出的内容的话菜单会显示重叠
         overflow: hidden;
         //内阴影

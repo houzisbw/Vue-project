@@ -46,7 +46,7 @@ function getLotteryDataEachWeekThreeTimes(){
       }
       //存入数据库
       var lottery = new Lottery({
-        time:obj.time,
+        time:obj.lotteryTime,
         red1:obj.red1,
         red2:obj.red2,
         red3:obj.red3,
@@ -60,9 +60,6 @@ function getLotteryDataEachWeekThreeTimes(){
     }
   })
 }
-
-//定时执行:周2,4,日晚上11点50分爬取,开奖时间是9点半左右
-//schedule.scheduleJob('50 23 * * 2,4,7',getLotteryDataEachWeekThreeTimes)
 
 
 //此函数一次性爬取所有双色球历史数据，只执行一次
