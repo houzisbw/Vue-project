@@ -1,61 +1,333 @@
 <!--快捷选号组件-->
 <template>
-    <div class="wrap-fast">
-      <!--红球区-->
-      <div class="redball-area">
-        <div class="title">
-          <span class="redball-title">红球区</span>
-          <span class="ball-desc">至少选择6个红球</span>
+    <div class="wrap-fast clearfix">
+      <div class="clearfix">
+        <!--红球区-->
+        <div class="redball-area clearfix">
+          <div class="title">
+            <span class="redball-title">红球区</span>
+            <span class="ball-desc">至少选择6个红球</span>
+          </div>
+          <!--红球区域-->
+          <div class="redball-choose-area clearfix">
+            <ul>
+              <!--禁止选择里面的文本,style用于兼容火狐-->
+              <li onselectstart="return false"
+                  style="-moz-user-select:none;"
+                  v-for="i in 33"
+                  @click="chooseRed(i)"
+                  :class="{'redball_active':isRedActive(i)}">{{i}}
+                <!--遗漏期数-->
+                <span class="missed-phase">{{redballLostTime[i]}}</span>
+              </li>
+            </ul>
+            <!--遗漏提示-->
+            <div class="lost-tip">
+              遗漏
+              <div class="lost-tip-arrow">
+              </div>
+              <div class="lost-tip-word">
+                遗漏是指该号码自上次开出以来至本次未出现的期数
+              </div>
+            </div>
+          </div>
+          <!--红球机选区域-->
+          <div class="random-choose">
+            <select v-model="redballSelected" @change="randomChooseRedball()">
+              <option v-for="i in 11">{{i+5}}</option>
+            </select>
+            <button class="red-button" @click="randomChooseRedball">机选红球</button>
+            <a href="javascript:;" @click="clearRedBall">清空</a>
+          </div>
         </div>
-        <!--红球区域-->
-        <div class="redball-choose-area">
-          <ul>
-            <!--禁止选择里面的文本,style用于兼容火狐-->
-            <li onselectstart="return false"
-                style="-moz-user-select:none;"
-                v-for="i in 33"
-                @click="chooseRed(i)"
-                :class="{'redball_active':isRedActive(i)}">{{i}}
-            </li>
-          </ul>
+        <!--蓝球区-->
+        <div class="blueball-area clearfix">
+          <div class="title">
+            <span class="blueball-title">蓝球区</span>
+            <span class="ball-desc">至少选择1个蓝球</span>
+          </div>
+          <!--蓝球区域-->
+          <div class="blueball-choose-area clearfix">
+            <ul>
+              <li onselectstart="return false"
+                  style="-moz-user-select:none;"
+                  v-for="i in 16"
+                  @click="chooseBlue(i)"
+                  :class="{'blueball_active':isBlueActive(i)}">{{i}}
+                <!--遗漏期数-->
+                <span class="missed-phase">{{blueballLostTime[i]}}</span>
+              </li>
+            </ul>
+          </div>
+          <!--蓝球机选区域-->
+          <div class="random-choose">
+            <select v-model="blueballSelected" @change="randomChooseBlueball()">
+              <option v-for="i in 16">{{i}}</option>
+            </select>
+            <button class="blue-button" @click="randomChooseBlueball">机选蓝球</button>
+            <a href="javascript:;" @click="clearBlueBall">清空</a>
+          </div>
         </div>
       </div>
-      <!--蓝球区-->
-      <div class="blueball-area">
-        <div class="title">
-          <span class="blueball-title">蓝球区</span>
-          <span class="ball-desc">至少选择1个蓝球</span>
+      <!--选中的信息-->
+      <div class="choosen-info">
+        <span class="info-wrap">
+          您当前选中了<span class="red">{{redballNum}}</span>个红球,
+          <span class="blue">{{blueballNum}}</span>个蓝球,
+          共<span class="red">{{totalLotteryCount}}</span>注,
+          共<span class="red">{{totalMoney}}</span>元
+        </span>
+        <!--文字中间的横线，z-index小于文字，被文字覆盖-->
+        <i></i>
+      </div>
+      <!--选中的号码-->
+      <div class="choosen-balls">
+        <ul>
+          <li v-for="(item,index) in redBallList" class="redball">{{item}}</li>
+          <li v-for="(item,index) in blueBallList" class="blueball">{{item}}</li>
+          <li class="delete-ball" v-if="isDeleteShow" @click="deleteAllBalls">删除</li>
+        </ul>
+      </div>
+      <!--智能分析按钮-->
+      <div class="analysis-wrap" v-if="isButtonShow">
+        <button class="smart-analysis-button"
+                :disabled="disableButton"
+                :class="{'button-disable':disableButton}"
+                @click="smartAnalysis">
+          智能分析
+        </button>
+        <div class="why">
+          <!--提示文字-->
+          <div class="why-desc">
+            智能分析将会从双色球各项历史数据统计类别分别进行分析评判，最终统计出该注综合评分!
+            结果仅供参考
+            <!--三角形-->
+            <div class="triangle-outer">
+            </div>
+            <div class="triangle-inner">
+            </div>
+          </div>
         </div>
-        <!--蓝球区域-->
-        <div class="blueball-choose-area">
-          <ul>
-            <li onselectstart="return false"
-                style="-moz-user-select:none;"
-                v-for="i in 16"
-                @click="chooseBlue(i)"
-                :class="{'blueball_active':isBlueActive(i)}">{{i}}
-            </li>
-          </ul>
+      </div>
+
+      <!--未选择时的提示文字-->
+      <div class="tips" v-if="!isDeleteShow">
+        <img src="./../../assets/icon/dialog-lottery.png">
+        <span>温馨提示：请选择号码(智能分析只能分析单注6+1)</span>
+      </div>
+
+      <!--分析后的各种文字数据-->
+      <div class="lottery-analysis-wrap" v-if="!isButtonShowData">
+        <!--总得分情况-->
+        <div class="total-score">
+          该注双色球总体得分为<span class="score">88</span>
         </div>
+        <!--表格，各项分析统计的数据-->
+        <table class="lottery-analysis-data">
+          <tr>
+            <th>分析类别</th>
+            <th>该项得分</th>
+            <th>详情图表</th>
+          </tr>
+          <tr  v-for="(item,index) in tableDataList">
+            <!--如果不是图表-->
+            <td class="item-td" v-if="!item.isGraph">{{item.name}}</td>
+            <td class="item-td" v-if="!item.isGraph">{{item.score}}</td>
+            <td class="item-td" v-if="!item.isGraph" @click="toggleNext(index)" >{{item.isOpen?'点击收起':'点击展开'}}</td>
+            <!--图表td,默认隐藏,占满3列-->
+            <td class="graph-td" colspan="3" v-show="item.isShow" v-else >
+              <div class="graph-wrap">
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 </template>
 
 <script>
   import _ from 'lodash'
+  import axios from 'axios'
 	export default {
 		name: 'smart-choose-tab-fast',
     data(){
 			return{
           redBallList:[],
-          blueBallList:[]
+          blueBallList:[],
+          //默认选中第一项
+          redballSelected:6,
+          blueballSelected:1,
+          //红球蓝球遗漏情况
+          redballLostTime:{},
+          blueballLostTime:{},
+          //智能分析按钮是否禁用,true为禁用
+          isButtonDisable:false,
+          //智能分析按钮是否显示
+          isButtonShowData:true,
+          //智能分析结果table的数据
+          tableDataList:[
+            {
+            	name:'历史开奖',
+              score:100,
+              //是否是图表td
+              isGraph:false,
+              //是否展开
+              isOpen:false
+            },
+            //图表数据项
+            {
+              isGraph:true,
+              isShow:false
+            },
+            {
+              name:'奇偶分布',
+              score:90,
+              isGraph:false,
+              isOpen:false
+            },
+            //图表数据项
+            {
+              isGraph:true,
+              isShow:false
+            },
+            {
+              name:'跨度走势',
+              score:90,
+              isGraph:false,
+              isOpen:false
+            },
+            //图表数据项
+            {
+              isGraph:true,
+              isShow:false
+            },
+            {
+              name:'和值走势',
+              score:40,
+              isGraph:false,
+              isOpen:false
+            },
+            //图表数据项
+            {
+              isGraph:true,
+              isShow:false
+            }
+          ]
+
       }
     },
     computed:{
-
+      //禁用或者启用按钮，false时启用按钮
+      disableButton(){
+      	//如果是处于响应期间，禁用按钮
+      	if(this.isButtonDisable){
+      		return true;
+        }
+      	//6+1时按钮才可用
+        return !(this.redBallList.length === 6 && this.blueBallList.length === 1);
+      },
+      //智能分析按钮是否显示
+      isButtonShow(){
+        if(this.isButtonShowData){
+          return this.redBallList.length + this.blueBallList.length;
+        }else{
+        	return false;
+        }
+      },
+    	//是否显示删除按钮
+      isDeleteShow(){
+      	return this.redBallList.length + this.blueBallList.length;
+      },
+      redballNum(){
+      	return this.redBallList.length;
+      },
+      blueballNum(){
+        return this.blueBallList.length;
+      },
+      //总注数
+      totalLotteryCount(){
+      	//选择不合法
+      	if(this.redBallList.length<6 || this.blueBallList.length<1){
+      		return 0;
+        }
+      	var count = 1;
+      	var redballNum = this.redBallList.length;
+      	while(redballNum>6){
+      		count *= redballNum--;
+        }
+        var t = this.redBallList.length - 6;
+        while(t>1){
+          count /= t--;
+        }
+        //精度问题，所以要变成整数
+        return parseInt(count*this.blueBallList.length,10)
+      },
+      //总金额
+      totalMoney(){
+        if(this.totalLotteryCount === 0){
+        	return 0;
+        }else{
+        	return this.totalLotteryCount * 2;
+        }
+      }
+    },
+    mounted:function(){
+      this.getBallLostTime();
     },
     methods:{
+    	//展开关闭下一项(相邻的)
+      toggleNext(index){
+      	this.tableDataList[index].isOpen = !this.tableDataList[index].isOpen;
+      	//图表toggle
+        this.tableDataList[index+1].isShow = !this.tableDataList[index+1].isShow;
+      },
+    	//获取红球蓝球遗漏值
+      getBallLostTime(){
+      	axios.get('/lottery/getlosttime').then((resp)=>{
+            var status = resp.data.status;
+            if(status !== -1){
+              this.redballLostTime = resp.data.red;
+              this.blueballLostTime = resp.data.blue;
+            }else{
+              //查询出错
+            }
+        })
+      },
+    	//智能分析
+      smartAnalysis(){
+      	//隐藏按钮
+      	this.isButtonShowData = false;
+      	var param ={};
+      	for(var i=0;i<this.redBallList.length;i++){
+          param['red'+(i+1)] = this.redBallList[i]
+        }
+        param.blue = this.blueBallList[0];
+        //禁用按钮
+        this.isButtonDisable = true;
+      	axios.post('/lottery/analysis',param).then((response)=>{
+            this.isButtonDisable = false;
+            var status = response.data.status;
+            if(status === 1){
+              //查询成功
+
+            }else{
+            	//查询出错
+            }
+
+        })
+      },
+      deleteAllBalls(){
+        this.isButtonShowData = true;
+      	this.redBallList = [];
+      	this.blueBallList = [];
+      },
+    	//必须指定排序方法，否则按字符排序
+    	sortFunc(a,b){
+    		return a-b
+      },
     	chooseBlue(ballNumber){
+        this.isButtonShowData = true;
+    		ballNumber = parseInt(ballNumber,10);
     		var isSelectedBallExist = _.indexOf(this.blueBallList,ballNumber);
     		if(isSelectedBallExist !== -1){
     			//存在了，则去除该蓝球
@@ -63,10 +335,14 @@
             return item !== ballNumber;
           })
         }else{
-          this.blueBallList.push(ballNumber)
+          this.blueBallList.push(parseInt(ballNumber,10))
         }
+        this.blueBallList.sort(this.sortFunc);
+
       },
       chooseRed(ballNumber){
+        this.isButtonShowData = true;
+        ballNumber = parseInt(ballNumber,10);
         var isSelectedBallExist = _.indexOf(this.redBallList,ballNumber);
         if(isSelectedBallExist !== -1){
           //存在了，则去除该蓝球
@@ -74,8 +350,9 @@
             return item !== ballNumber;
           })
         }else{
-          this.redBallList.push(ballNumber)
+          this.redBallList.push(parseInt(ballNumber,10))
         }
+        this.redBallList.sort(this.sortFunc);
       },
       //注意这里的函数用于绑定class
       isRedActive(index){
@@ -93,6 +370,64 @@
           }
         }
         return false;
+      },
+      //机选红球
+      randomChooseRedball(){
+          this.isButtonShowData = true;
+      	  //清空
+          this.redBallList = [];
+      	  //需要机选出的红球的个数
+          var redballNum = parseInt(this.redballSelected,10);
+          //已经选择的红球的个数
+          var choosenBallNum = 0;
+          while(choosenBallNum < redballNum){
+          	  //随机一个红球
+              var randomRedBall = Math.floor(Math.random()*33)+1;
+              var isExist = false;
+              for(var i=0;i<this.redBallList.length;i++){
+              	if(this.redBallList[i] === randomRedBall){
+                  isExist = true;
+                  break;
+                }
+              }
+              if(isExist) continue;
+              else this.redBallList.push(parseInt(randomRedBall,10));
+              choosenBallNum++;
+          }
+          this.redBallList.sort(this.sortFunc);
+      },
+      clearRedBall(){
+        this.isButtonShowData = true;
+      	this.redBallList = [];
+      },
+      //机选蓝球
+      randomChooseBlueball(){
+        this.isButtonShowData = true;
+        //清空
+        this.blueBallList = [];
+        //需要机选出的红球的个数
+        var blueballNum = parseInt(this.blueballSelected,10);
+        //已经选择的红球的个数
+        var choosenBallNum = 0;
+        while(choosenBallNum < blueballNum){
+          //随机一个红球
+          var randomRedBall = Math.floor(Math.random()*16)+1;
+          var isExist = false;
+          for(var i=0;i<this.blueBallList.length;i++){
+            if(this.blueBallList[i] === randomRedBall){
+              isExist = true;
+              break;
+            }
+          }
+          if(isExist) continue;
+          else this.blueBallList.push(parseInt(randomRedBall,10));
+          choosenBallNum++;
+        }
+        this.blueBallList.sort(this.sortFunc);
+      },
+      clearBlueBall(){
+          this.isButtonShowData = true;
+          this.blueBallList = [];
       }
     }
 	}
@@ -101,19 +436,93 @@
 <style type="text/less" lang='less' scoped>
   .wrap-fast{
     margin: 30px 80px;
+    .choosen-info{
+      text-align: center;
+      margin-top: 30px;
+      font-size: 13px;
+      color: #9f9f9f;
+      .red{
+        color:#ba2636;
+      }
+      .blue{
+        color:#015eca;
+      }
+      .info-wrap{
+        z-index:10;
+        background-color: #fff;
+        display: inline-block;
+        //只有设置了position不是static,index才会起作用
+        position: relative;
+        padding:0 10px;
+      }
+      i{
+        display: block;
+        margin: -7px 0 0 0;
+        height: 1px;
+        border-top: 1px dotted #aeaeae;
+        position: relative;
+        z-index: 9;
+      }
+    }
     .redball-choose-area,.blueball-choose-area{
+      position: relative;
       li{
         float:left;
         width:33px;
         height:33px;
-        margin: 5px 3px;
+        margin: 5px 3px 15px 3px;
         background: url('./../../assets/icon/lottery_union.png') 0 0 no-repeat ;
         line-height: 33px;
-        text-align: center;
         font-weight: 500;
         cursor:pointer;
+        position: relative;
+        text-align: center;
         &:hover{
           background: url('./../../assets/icon/lottery_union.png') -35px 0 no-repeat ;
+        }
+        .missed-phase{
+          //让里面的文字居中
+          display: inline-block;
+          text-align: center;
+          width:33px;
+          height:10px;
+          position: absolute;
+          left:0;
+          top:25px;
+          color:#cbcbcb;
+          font-size: 10px;
+        }
+      }
+      .lost-tip{
+        position: absolute;
+        left:-35px;
+        top:39px;
+        color:#cbcbcb;
+        font-size: 13px;
+        &:hover .lost-tip-word{
+          display: block;
+        }
+        .lost-tip-arrow{
+          position: absolute;
+          width:0;
+          height:0;
+          right:-15px;
+          top:2px;
+          border-left:5px solid #b0b0b0;
+          border-top:5px solid transparent;
+          border-bottom:5px solid transparent;
+          border-right:5px solid transparent;
+        }
+        .lost-tip-word{
+          border:1px solid #d7b179;
+          background-color: #fffee4;
+          width:150px;
+          padding: 5px;
+          position: absolute;
+          top:20px;
+          color: #797979;
+          font-size: 12px;
+          display: none;
         }
       }
     }
@@ -159,6 +568,250 @@
       background: url('./../../assets/icon/lottery_union.png') -140px 0 no-repeat !important;
       color:#fff;
     }
+    .random-choose{
+      margin:30px auto 5px auto;
+      text-align: center;
+      select{
+        border-radius: 4px;
+        border-color:#cbcbcb;
+        padding:4px 5px 4px 5px;
+        option{
+          text-align: center;
+        }
+      }
+      a{
+        color: #aaaaaa;
+        font-size: 14px;
+        position: relative;
+        top:-1px;
+        margin-left: 3px;
+      }
+      .red-button{
+        outline:none;
+        border:1px solid #cbcbcb;
+        border-radius: 4px;
+        padding:4px 4px;
+        color:#ba2636;
+        position: relative;
+        top:1px;
+        background-color: #fff;
+        margin-left: 5px;
+        cursor:pointer;
+        transition: all .5s;
+        &:hover{
+          color:#fff;
+          background-color: #ba2636;
+          border-color:#ba2636;
+        }
+      }
+      .blue-button{
+        outline:none;
+        border:1px solid #cbcbcb;
+        border-radius: 4px;
+        padding:4px 4px;
+        color:#015eca;
+        position: relative;
+        top:1px;
+        background-color: #fff;
+        margin-left: 5px;
+        cursor:pointer;
+        transition: all .5s;
+        &:hover{
+          color:#fff;
+          background-color: #015eca;
+          border-color:#015eca;
+        }
+      }
+    }
+    .choosen-balls{
+      margin: 40px auto;
+      text-align: center;
+      .redball{
+        background: url('./../../assets/icon/lottery_union.png') -70px 0 no-repeat !important;
+      }
+      .blueball{
+        background: url('./../../assets/icon/lottery_union.png') -140px 0 no-repeat !important;
+      }
+      li{
+        //居中的关键,不能用float
+        display: inline-block;
+        width:33px;
+        height:33px;
+        margin: 5px 3px;
+        //background: url('./../../assets/icon/lottery_union.png') -70px 0 no-repeat ;
+        line-height: 33px;
+        text-align: center;
+        font-weight: 500;
+        cursor:pointer;
+        color:#fff;
+      }
+      .delete-ball{
+        color: #b6b6b6;
+        font-size: 13px;
+      }
+    }
+    .tips{
+      height:60px;
+      text-align: center;
+      margin-top: 60px;
+      line-height: 60px;
+      img{
+        width:60px;
+        height:60px;
+        margin-right: 30px;
+        display: inline-block;
+        //实现div内图片文字同一行
+        vertical-align: middle;
+      }
+      span{
+        color:#8b8b8b;
+        font-size: 15px;
+        line-height: 60px;
+        height:60px;
+        display: inline-block;
+      }
+    }
+    .smart-analysis-button{
+      width:160px;
+      height:40px;
+      border-radius: 20px;
+      background-color: #f56c6c;
+      margin: 0 auto;
+      line-height: 40px;
+      text-align: center;
+      color:#fff;
+      font-size: 16px;
+      cursor: pointer;
+      outline: none;
+      border: none;
+      //设置为block才能居中，原来是inline-block
+      display: block;
+      transition: all .5s;
+      position: relative;
+      &:hover{
+        opacity: 0.8;
+      }
+    }
+    .button-disable{
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .analysis-wrap{
+      position: relative;
+      width:180px;
+      margin: 0 auto;
+      .why{
+        position: absolute;
+        right:-30px;
+        top:11px;
+        width:20px;
+        height:20px;
+        background:url('./../../assets/icon/why-analysis.png') center center no-repeat;
+        background-size: 20px 20px;
+        &:hover .why-desc{
+          display: block;
+        }
+        .why-desc{
+          display: none;
+          position: absolute;
+          left:20px;
+          top:-40px;
+          width:80px;
+          margin-left: 20px;
+          padding:10px;
+          border:1px solid #d7b179;
+          background-color: #fffee4;
+          z-index:100;
+          font-size: 12px;
+          color: #656565;
+          text-align: justify;
+          border-radius: 6px;
+          .triangle-inner{
+            @borderInnerWidth:10px;
+            position: absolute;
+            left:-18px;
+            top:40px;
+            width:0;
+            height:0;
+            border-top:@borderInnerWidth solid transparent;
+            border-left:@borderInnerWidth solid transparent;
+            border-bottom:@borderInnerWidth solid transparent;
+            border-right:@borderInnerWidth solid #fffee4;
+          }
+          .triangle-outer{
+            @borderInnerWidth:10px;
+            position: absolute;
+            left:-20px;
+            top:40px;
+            width:0;
+            height:0;
+            border-top:@borderInnerWidth solid transparent;
+            border-left:@borderInnerWidth solid transparent;
+            border-bottom:@borderInnerWidth solid transparent;
+            border-right:@borderInnerWidth solid #d7b179;
+          }
+
+        }
+
+      }
+    }
+    .lottery-analysis-wrap{
+      margin-top: 30px;
+      margin-bottom: 80px;
+      .total-score{
+        padding-left: 60px;
+        height:40px;
+        margin: 0 auto;
+        width:250px;
+        background: url('./../../assets/icon/lottery-rate-high.png') left top no-repeat;
+        background-size: 40px 40px;
+        font-size: 20px;
+        color: #4c4c4c;
+        font-weight: bold;
+        line-height: 40px;
+        font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,SimSun,sans-serif;
+        .score{
+          color:#00bb29;
+          font-size: 22px;
+        }
+      }
+      .lottery-analysis-data{
+        width:100%;
+        margin-top: 50px;
+        border-collapse: collapse;
+        vertical-align: middle;
+        .graph-wrap{
+          height:100px;
+        }
+        th{
+          color:#909399;
+          font-weight: bold;
+          text-align: center;
+          padding:0 0 15px 0;
+        }
+        td{
+          text-align: center;
+          padding: 20px 0;
+          color:#606266;
+          vertical-align: middle;
+          font-size: 14px;
+        }
+        .item-td:last-child{
+          color:#65bcf7;
+          cursor: pointer;
+        }
+        tr{
+          border-bottom: 1px solid #f0f0f0;
+          transition: all .5s;
+        }
+        tr:not(:first-child){
+          &:hover{
+            background-color: #f2f7f3;
+          }
+        }
+      }
+    }
+
 
   }
 </style>

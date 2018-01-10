@@ -1,5 +1,7 @@
 <!--双色球智能选号-->
 <template>
+  <!--最外层的div是为了后面的底部padding-->
+  <div>
     <div class="wrap">
       <!--标题区域-->
       <div class="title">
@@ -23,15 +25,20 @@
         </keep-alive>
       </div>
     </div>
+    <!--底部padding-->
+    <!--用于让底部和内容隔开一定距离-->
+    <div class="bottom-padding">
+    </div>
+  </div>
 </template>
 
 <script>
-  import LuckyChoose from './SmartChoose-tab-lucky'
+  import NameChoose from './SmartChoose-tab-lucky'
   import FastChoose from './SmartChoose-tab-fast'
 	export default {
 		name: 'smartChoose',
     components:{
-      LuckyChoose,
+      NameChoose,
       FastChoose
     },
     data(){
@@ -48,9 +55,19 @@
             tabComponent:'FastChoose'
           },
           {
-            name:'幸运投注',
+            name:'姓名投注',
             isActive:false,
-            tabComponent:'LuckyChoose'
+            tabComponent:'NameChoose'
+          },
+          {
+            name:'生日投注',
+            isActive:false,
+            tabComponent:'BirthdayChoose'
+          },
+          {
+            name:'手机号投注',
+            isActive:false,
+            tabComponent:'TelephoneChoose'
           }
         ],
         currentTab:'FastChoose'
@@ -68,10 +85,14 @@
 </script>
 
 <style type="text/less" lang="less" scoped>
+  .bottom-padding{
+    height:100px;
+    width:100%;
+  }
   .wrap{
     margin: 20px auto;
     width:1000px;
-    min-height:1000px;
+    min-height:600px;
     background-color: #fff;
     border:1px solid #d3d3d3;
     border-radius: 5px;

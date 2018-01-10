@@ -17,6 +17,9 @@ module.exports = {
       },
       '/phantom/*':{
         target:'http://localhost:3000'
+      },
+      '/lottery/*':{
+        target:'http://localhost:3000'
       }
     },
 
