@@ -119,8 +119,8 @@
       <!--分析后的各种文字数据-->
       <div class="lottery-analysis-wrap" v-if="!isButtonShowData">
         <!--总得分情况-->
-        <div class="total-score">
-          该注双色球总体得分为<span class="score">88</span>
+        <div class="total-score" :class="currentLotteryTotalScore>60 ? 'total-score-high':(currentLotteryTotalScore>30 ? 'total-score-mid' : 'total-score-low' )">
+          该注双色球总体得分为<span class="score" :class="currentLotteryTotalScore>60 ? 'total-score-high-color':(currentLotteryTotalScore>30 ? 'total-score-mid-color' : 'total-score-low-color' )">{{currentLotteryTotalScore}}</span>
         </div>
         <!--表格，各项分析统计的数据-->
         <table class="lottery-analysis-data">
@@ -132,12 +132,16 @@
           <tr  v-for="(item,index) in tableDataList">
             <!--如果不是图表-->
             <td class="item-td" v-if="!item.isGraph">{{item.name}}</td>
-            <td class="item-td" v-if="!item.isGraph">{{item.score}}</td>
+            <td class="item-td" v-if="!item.isGraph">{{scoreObj[item.type]}}</td>
             <td class="item-td" v-if="!item.isGraph" @click="toggleNext(index)" >{{item.isOpen?'点击收起':'点击展开'}}</td>
             <!--图表td,默认隐藏,占满3列-->
             <td class="graph-td" colspan="3" v-show="item.isShow" v-else >
-              <div class="graph-wrap">
-              </div>
+              <!--<transition name="slow-slide" >-->
+                <div class="graph-wrap" v-show="item.isShow">
+                  <!--动态组件,传递图表参数-->
+                  <component :is="item.component" :graph-data="item.graphData" :selectedBall="selectedBallList"></component>
+                </div>
+              <!--</transition>-->
             </td>
           </tr>
         </table>
@@ -148,10 +152,25 @@
 <script>
   import _ from 'lodash'
   import axios from 'axios'
+  //引入4个图表组件
+  import LotteryEvenOdd from './../lottery/lottery-graph/LotteryEvenOdd'
+  import LotteryExpand from './../lottery/lottery-graph/LotteryExpand'
+  import LotteryGraphHistory from './../lottery/lottery-graph/LotteryGraphHistory'
+  import LotterySum from './../lottery/lottery-graph/LotterySum'
 	export default {
 		name: 'smart-choose-tab-fast',
+    components:{
+      LotteryEvenOdd,
+      LotteryExpand,
+      LotteryGraphHistory,
+      LotterySum
+    },
     data(){
 			return{
+				  //各项得分
+          evenOddScore:0,
+          expandScore:0,
+          //红球蓝球列表
           redBallList:[],
           blueBallList:[],
           //默认选中第一项
@@ -164,11 +183,20 @@
           isButtonDisable:false,
           //智能分析按钮是否显示
           isButtonShowData:true,
+          //本注双色球
+          selectedBallList:[],
+          //双色球数据分数对象
+          scoreObj:{
+          	history:0,
+            evenodd:0,
+            expand:0,
+            sum:0
+          },
           //智能分析结果table的数据
           tableDataList:[
             {
+            	type:'history',
             	name:'历史开奖',
-              score:100,
               //是否是图表td
               isGraph:false,
               //是否展开
@@ -177,46 +205,73 @@
             //图表数据项
             {
               isGraph:true,
-              isShow:false
+              isShow:false,
+              //每个图表的组件
+              component:'LotteryGraphHistory',
+              //图表数据
+              graphData:'history'
             },
             {
+              type:'evenodd',
               name:'奇偶分布',
-              score:90,
               isGraph:false,
               isOpen:false
             },
             //图表数据项
             {
               isGraph:true,
-              isShow:false
+              isShow:false,
+              //每个图表的组件
+              component:'LotteryEvenOdd',
+              //图表数据,默认空对象
+              graphData:{}
             },
             {
+              type:'expand',
               name:'跨度走势',
-              score:90,
               isGraph:false,
               isOpen:false
             },
             //图表数据项
             {
               isGraph:true,
-              isShow:false
+              isShow:false,
+              //每个图表的组件
+              component:'LotteryExpand',
+              //图表数据
+              graphData:'expand'
             },
             {
+              type:'sum',
               name:'和值走势',
-              score:40,
               isGraph:false,
               isOpen:false
             },
             //图表数据项
             {
               isGraph:true,
-              isShow:false
+              isShow:false,
+              //每个图表的组件
+              component:'LotterySum',
+              //图表数据
+              graphData:'sum'
             }
           ]
 
       }
     },
     computed:{
+      //双色球总体得分
+      currentLotteryTotalScore(){
+      	var sum = 1,addSum=0,cnt=0;
+      	for(var key in this.scoreObj){
+          sum *= this.scoreObj[key];
+          addSum += this.scoreObj[key];
+          cnt++;
+        }
+        //最终分数是相乘和相加之间的平均数
+      	return Math.floor((parseInt(sum / 100000000 * 100,10) + parseInt(addSum / cnt,10))/2);
+      },
       //禁用或者启用按钮，false时启用按钮
       disableButton(){
       	//如果是处于响应期间，禁用按钮
@@ -275,6 +330,80 @@
       this.getBallLostTime();
     },
     methods:{
+    	//计算每一项得分
+      caculateEachPartScore(partName,partData){
+      	//奇偶部分分数
+      	if(partName === 'EVEN_ODD'){
+      		 //对应0奇数 - 6奇数
+           var scoreList = [1,60,90,100,90,60,1];
+           //获取奇偶情况
+           var oddNum = 0;
+           this.selectedBallList.forEach((item)=>{
+           	  if(item%2 !== 0){
+                oddNum++;
+              }
+           })
+           return scoreList[oddNum];
+        //跨度分布
+        }else if(partName === 'EXPAND'){
+          var dataList =  [];
+          for(var key in partData){
+            if(partData.hasOwnProperty(key)){
+              dataList.push([parseInt(key,10),partData[key]]);
+            }
+          }
+          //按注数升序排序
+          dataList.sort(function(a,b){
+          	return a[1]-b[1]
+          })
+          //该注双色球跨度
+          this.selectedBallList.sort(function(a,b){
+          	return a-b
+          })
+          var expand = this.selectedBallList[this.selectedBallList.length-1] - this.selectedBallList[0];
+          //获取该注双色球的位置
+          var pos = 0;
+          dataList.forEach(function(item,index){
+          	if(item[0] === expand){
+          		pos = index
+            }
+          })
+          //计算分数,排序后从小到大分数一次递增最大100分
+          var score = parseInt((pos+1) / dataList.length * 100,10);
+          return score
+        //如果是和值分布
+        }else if(partName === 'SUM'){
+        	//获取和值
+          var sum = 0;
+          this.selectedBallList.forEach(function(item){
+          	sum+=item;
+          });
+          console.log(sum)
+          var dataList =  [];
+          for(var key in partData){
+            if(partData.hasOwnProperty(key)){
+              dataList.push([parseInt(key,10),partData[key]]);
+            }
+          }
+          //按注数进行升序排序
+          dataList.sort(function(a,b){
+          	return a[1]-b[1]
+          })
+          //该注双色球所处位置
+          var pos = 0;
+          dataList.forEach(function(item,index){
+          	if(parseInt(item[0],10) === sum){
+          		pos = index;
+            }
+          });
+          //得分情况
+          return parseInt((pos+1) / dataList.length * 100,10);
+
+        }else if(partName === 'HISTORY'){
+        	return partData ? 0:100
+        }
+
+      },
     	//展开关闭下一项(相邻的)
       toggleNext(index){
       	this.tableDataList[index].isOpen = !this.tableDataList[index].isOpen;
@@ -295,8 +424,6 @@
       },
     	//智能分析
       smartAnalysis(){
-      	//隐藏按钮
-      	this.isButtonShowData = false;
       	var param ={};
       	for(var i=0;i<this.redBallList.length;i++){
           param['red'+(i+1)] = this.redBallList[i]
@@ -304,12 +431,42 @@
         param.blue = this.blueBallList[0];
         //禁用按钮
         this.isButtonDisable = true;
+        this.selectedBallList = [];
       	axios.post('/lottery/analysis',param).then((response)=>{
+      		  //本注双色球
+            this.redBallList.forEach((item)=>{
+            	this.selectedBallList.push(item);
+            });
+      		  //取消按钮禁用
             this.isButtonDisable = false;
+            //显示图表
+            this.isButtonShowData = false;
             var status = response.data.status;
             if(status === 1){
-              //查询成功
+              //查询成功,将数据赋值给对应td
+              for(var i=0;i<this.tableDataList.length;i++){
+              	var item = this.tableDataList[i];
+              	if(item.isGraph){
+              		//如果是奇偶分布
+              		if(item.component === 'LotteryEvenOdd'){
+                    item.graphData = response.data.evenOdd;
+                    //计算奇偶部分的分数
+                    this.scoreObj['evenodd'] = this.caculateEachPartScore('EVEN_ODD')
+                  //如果是跨度分布
+                  }else if(item.component === 'LotteryExpand'){
+                    item.graphData = response.data.expand;
+                    this.scoreObj['expand'] = this.caculateEachPartScore('EXPAND',item.graphData);
+                  //如果是和值分布
+                  }else if(item.component === 'LotterySum'){
+                    item.graphData = response.data.sum;
+                    this.scoreObj['sum'] = this.caculateEachPartScore('SUM',item.graphData);
+                  }else if(item.component === 'LotteryGraphHistory'){
+                    item.graphData = response.data.isSame;
+                    this.scoreObj['history'] = this.caculateEachPartScore('HISTORY',item.graphData);
+                  }
 
+                }
+              }
             }else{
             	//查询出错
             }
@@ -763,8 +920,6 @@
         height:40px;
         margin: 0 auto;
         width:250px;
-        background: url('./../../assets/icon/lottery-rate-high.png') left top no-repeat;
-        background-size: 40px 40px;
         font-size: 20px;
         color: #4c4c4c;
         font-weight: bold;
@@ -775,13 +930,34 @@
           font-size: 22px;
         }
       }
+      .total-score-high{
+        background: url('./../../assets/icon/lottery-rate-high.png') left top no-repeat;
+        background-size: 40px 40px;
+      }
+      .total-score-mid{
+        background: url('./../../assets/icon/lottery-rate-mid.png') left top no-repeat;
+        background-size: 40px 40px;
+      }
+      .total-score-low{
+        background: url('./../../assets/icon/lottery-rate-low.png') left top no-repeat;
+        background-size: 40px 40px;
+      }
+      .total-score-high-color{
+        color: #00bb29!important;
+      }
+      .total-score-mid-color{
+        color: #faef42 !important;
+      }
+      .total-score-low-color{
+        color:#CF3A2F!important;
+      }
       .lottery-analysis-data{
         width:100%;
         margin-top: 50px;
         border-collapse: collapse;
         vertical-align: middle;
         .graph-wrap{
-          height:100px;
+          min-height:100px;
         }
         th{
           color:#909399;
@@ -795,6 +971,8 @@
           color:#606266;
           vertical-align: middle;
           font-size: 14px;
+          overflow: hidden;
+          box-sizing: border-box;
         }
         .item-td:last-child{
           color:#65bcf7;
@@ -810,6 +988,17 @@
           }
         }
       }
+    }
+
+    //动画
+    .slow-slide-enter,.slow-slide-leave-to{
+      height:0;
+    }
+    .slow-slide-enter-to,.slow-slide-leave{
+      height:400px;
+    }
+    .slow-slide-enter-active,.slow-slide-leave-active{
+      transition: all .5s ease;
     }
 
 
