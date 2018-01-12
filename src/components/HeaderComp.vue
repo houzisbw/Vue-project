@@ -379,6 +379,11 @@
           eventBus.$on('search-result-empty',()=>{
             this.popDialog('╮(╯﹏╰）╭','没有找到符合您要求的书签哦！',1,'BOOKMARK_SEARCH_EMPTY');
           })
+
+          //手机号不合法
+          eventBus.$on('PHONE_NUMBER_INVALID',()=>{
+            this.popDialog('╮(╯﹏╰）╭','您输入的手机号不合法！',1,'HIDE_SELF_DIALOG');
+          })
         }
     }
 </script>

@@ -35,16 +35,19 @@
 <script>
   import NameChoose from './SmartChoose-tab-lucky'
   import FastChoose from './SmartChoose-tab-fast'
+  import TelephoneChoose from './SmartChoose-tab-telephone'
+  import axios from 'axios'
 	export default {
 		name: 'smartChoose',
     components:{
       NameChoose,
-      FastChoose
+      FastChoose,
+      TelephoneChoose
     },
     data(){
 			return {
 				lotteryPurchaseDeadline:'2018-01-09 19:40',
-        lotteryPhase:2018004,
+        lotteryPhase:'2018004',
         //tab面板默认显示的面板索引
         tabIndex:0,
         //双色球tab数据,tabComponent指的是组件名称,用于赋值给动态组件的is属性
@@ -54,16 +57,16 @@
             isActive:false,
             tabComponent:'FastChoose'
           },
-          {
-            name:'姓名投注',
-            isActive:false,
-            tabComponent:'NameChoose'
-          },
-          {
-            name:'生日投注',
-            isActive:false,
-            tabComponent:'BirthdayChoose'
-          },
+//          {
+//            name:'姓名投注',
+//            isActive:false,
+//            tabComponent:'NameChoose'
+//          },
+//          {
+//            name:'生日投注',
+//            isActive:false,
+//            tabComponent:'BirthdayChoose'
+//          },
           {
             name:'手机号投注',
             isActive:false,
@@ -78,7 +81,36 @@
     	switchTab(index){
         this.tabIndex = index;
         this.currentTab = this.tabData[index].tabComponent;
+      },
+      //设置投注截止日期
+      setBuyDeadline(){
+        var date = new Date();
+        //当前周几
+        var weekNum = date.getDay();
+        //到下一期开奖日期需要的天数，索引0-6代表周日到周6
+        var nextLotteryDraw = [0,1,0,1,0,2,1];
+        //到下一期开奖日期的毫秒数
+        var millsecsToNext = nextLotteryDraw[weekNum] * 24 * 60 * 60 * 1000;
+        //获取下一个开奖日期的年月日
+        date.setTime(date.getTime() + millsecsToNext);
+        var nextYearMonthDay = date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+        this.lotteryPurchaseDeadline = nextYearMonthDay + ' 19:40';
+      },
+      //获取当前期数
+      getCurrentPhase(){
+      	axios.get('/lottery/phase').then((resp)=>{
+            var status = resp.data.status;
+            if(status === 1){
+            	this.lotteryPhase = parseInt(resp.data.phase,10)+1;
+            }else{
+              this.lotteryPhase = '000000';
+            }
+        })
       }
+    },
+    mounted(){
+      this.setBuyDeadline();
+      this.getCurrentPhase();
     }
 
 	}

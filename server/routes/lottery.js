@@ -147,9 +147,22 @@ router.get('/getlosttime',function(req,res,next){
         blue: retBlueObj
       })
     }
-
-
   });
+})
+
+//获取当前期数
+router.get('/phase',function(req,res,next){
+  Lottery.find({}).sort({time:-1}).exec(function(err,docs){
+    if(err){
+      res.json({status:-1})
+    }else{
+      var phase = docs[0].time;
+      res.json({
+        status:1,
+        phase:phase
+      })
+    }
+  })
 })
 
 
