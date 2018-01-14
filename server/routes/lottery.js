@@ -163,7 +163,47 @@ router.get('/phase',function(req,res,next){
       })
     }
   })
-})
+});
+
+//获取历史数据
+router.post('/getHistoryData',function(req,res,next){
+  //双色球期数,注意要转为整数
+  var phaseNum = parseInt(req.body.phaseNum,10);
+  //查询数据库,降序排列,限制phaseNum条数据
+  Lottery.find({}).sort({time:-1}).limit(phaseNum).exec(function(err,docs){
+      if(err){
+        res.json({
+          status:-1
+        })
+      }else{
+        res.json({
+          status:1,
+          lotteryData:docs
+        })
+      }
+  })
+
+});
+
+//获取双色球期数段查询
+router.post('/searchPhase',function(req,res,next){
+    var start = req.body.start,
+        end = req.body.end;
+    //最多显示100期
+    Lottery.find({time:{$gte:start,$lte:end}}).sort({time:-1}).limit(100).exec(function(err,docs){
+      if(err){
+        res.json({
+          status:-1
+        })
+      }else {
+        res.json({
+          status: 1,
+          lotteryData: docs
+        })
+      }
+    })
+
+});
 
 
 

@@ -8,6 +8,7 @@ import ImportBookMark from '@/components/ImportBookMark'
 import Default from '@/components/Default'
 import Lottery from '@/components/lottery/Lottery'
 import SmartChoose from '@/components/lottery/SmartChoose'
+import LotteryHistory from '@/components/lottery/LotteryHistory'
 
 Vue.use(Router)
 
@@ -44,6 +45,10 @@ export default new Router({
         {
           path:'smartChooseLottery',
           component:SmartChoose
+        },
+        {
+          path:'lotteryHistorySearch',
+          component:LotteryHistory
         }
       ]
     },
