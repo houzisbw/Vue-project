@@ -9,6 +9,7 @@ import Default from '@/components/Default'
 import Lottery from '@/components/lottery/Lottery'
 import SmartChoose from '@/components/lottery/SmartChoose'
 import LotteryHistory from '@/components/lottery/LotteryHistory'
+import LotteryPrizeRule from '@/components/lottery/LotteryPrizeRule'
 
 Vue.use(Router)
 
@@ -49,6 +50,10 @@ export default new Router({
         {
           path:'lotteryHistorySearch',
           component:LotteryHistory
+        },
+        {
+          path:'lotteryPrizeRule',
+          component:LotteryPrizeRule
         }
       ]
     },

@@ -83,8 +83,8 @@
                         menuIcon:require('./../assets/icon/lotteryhistory.png')
                       },
                       {
-                        menuName:'专家预测',
-                        menuLink:'/lottery/lotteryExpertPredict',
+                        menuName:'中奖细则',
+                        menuLink:'/lottery/lotteryPrizeRule',
                         menuIcon:require('./../assets/icon/lotteryexpert.png')
                       }
                     ]

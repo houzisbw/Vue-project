@@ -24,9 +24,8 @@
         <span>标注形式选择:</span>
         <input type="checkbox" id="lottery-graph-lost" v-model="lostHighLightChecked"><label for="lottery-graph-lost">遗漏高亮</label>
         <input type="checkbox" id="lottery-graph-line" v-model="blueBallLineChecked"><label for="lottery-graph-line" >折线</label>
-        <input type="checkbox" id="lottery-graph-repeat"><label for="lottery-graph-repeat">重号</label>
-        <input type="checkbox" id="lottery-graph-successive"><label for="lottery-graph-successive">连号</label>
-        <input type="checkbox" id="lottery-graph-side"><label for="lottery-graph-side">边号</label>
+        <input type="checkbox" id="lottery-graph-repeat" v-model="ballRepeatedChecked"><label for="lottery-graph-repeat">重号</label>
+        <input type="checkbox" id="lottery-graph-successive" v-model="ballConsecutiveChecked"><label for="lottery-graph-successive">连号</label>
       </div>
       <!--双色球表格-->
       <table class="lottery-data-table">
@@ -43,18 +42,27 @@
         <!--内容-->
         <tr v-for="(item,index) in lotteryDataList">
           <!--期数-->
-          <td :class="{'sep-line':(index+1)%5===0 && index !== lotteryDataList.length-1}">{{item.time}}</td>
+          <td :class="{'sep-line':(index+1)%5===0 && index !== lotteryDataList.length-1}">
+            {{item.time}}
+
+          </td>
           <!--红球-->
           <td v-for="j in 33" :class="{'sep-line':(index+1)%5===0 && index !== lotteryDataList.length-1,'lottery-ball-highlight':isBallHighLight(index,j-1)}">
             <!--是否是当期的红球,v-if可以用函数判断-->
-            <div v-if="isRedBall(item,j)" class="red-ball">
+            <div v-if="isRedBall(item,j)"
+                 class="red-ball"
+                 :class="{'repeated-ball':isRepeatedBall(index,j-1),
+                          'consecutive-ball':isConsecutiveBall(index,j-1)
+                 }">
               {{j}}
             </div>
           </td>
           <!--蓝球-->
           <td v-for="k in 16" :class="{'sep-line':(index+1)%5===0 && index !== lotteryDataList.length-1,'lottery-ball-highlight':isBallHighLight(index,k+32)}">
             <!--是否是当期的红球,v-if可以用函数判断-->
-            <div v-if="isBlueBall(item,k)" class="blue-ball">
+            <div v-if="isBlueBall(item,k)"
+                 class="blue-ball"
+                 :class="{'repeated-ball':isRepeatedBall(index,k+32)}">
               {{k}}
             </div>
           </td>
@@ -68,6 +76,22 @@
         </canvas>
       </table>
       <div class="lottery-data-desc">
+        <!--参数说明标题-->
+        <div class="lottery-data-desc-title">
+          参数说明
+        </div>
+        <div class="lottery-param">
+          <span>遗漏高亮:</span>&nbsp;高亮显示每个球自上期开出到本期间隔的期数
+        </div>
+        <div class="lottery-param">
+          <span>重号:</span>&nbsp;以橙色标注出与上期开奖号相同的号
+        </div>
+        <div class="lottery-param">
+          <span>连号:</span>&nbsp;以蓝色标注出每期相邻的号码
+        </div>
+        <div class="lottery-param">
+          <span>折线:</span>&nbsp;用折线连接蓝球显示蓝球走势
+        </div>
       </div>
     </div>
     <!--底部padding-->
@@ -103,6 +127,10 @@
         blueBallLineChecked:true,
         //遗漏高亮显示与否
         lostHighLightChecked:false,
+        //重号显示与否
+        ballRepeatedChecked:false,
+        //连号
+        ballConsecutiveChecked:false,
         //显示遗漏高亮的二维数组,数组元素是对象,里面2个key，分别是原始数据和是否显示遗漏高亮(由原始数据计算出)
         //红蓝球一起,前33个红，后16个蓝
         lotteryLostHighLightMatrix:[]
@@ -115,6 +143,14 @@
     	//是否高亮
       isBallHighLight(row,col){
       	return this.lostHighLightChecked && this.lotteryLostHighLightMatrix[row][col].isHighLight;
+      },
+      //是否重号
+      isRepeatedBall(row,col){
+      	return this.ballRepeatedChecked && this.lotteryLostHighLightMatrix[row][col].isRepeated;
+      },
+      //是否连号
+      isConsecutiveBall(row,col){
+      	return this.ballConsecutiveChecked && this.lotteryLostHighLightMatrix[row][col].isConsecutive;
       },
     	//排序
       sortLotteryList(){
@@ -264,7 +300,12 @@
               //isHighLight:true为高亮
               ballList.push({
                 isEmpty:0,
-                isHighLight:false
+                //遗漏高亮
+                isHighLight:false,
+                //重号
+                isRepeated:false,
+                //连号
+                isConsecutive:false
               })
             }
             //红球填充
@@ -284,6 +325,32 @@
               j++;
             }
         }
+        //计算重号
+        for(var i=0;i<=48;i++){
+        	for(var j=0;j<this.lotteryLostHighLightMatrix.length;j++){
+        		if(this.lotteryLostHighLightMatrix[j][i].isEmpty === 1){
+        			//下一个球
+        			var t = j+1;
+        			while(t<this.lotteryLostHighLightMatrix.length && this.lotteryLostHighLightMatrix[t][i].isEmpty===1 && !this.lotteryLostHighLightMatrix[t][i].isRepeated){
+                this.lotteryLostHighLightMatrix[t][i].isRepeated = true;
+        				t++;
+              }
+            }
+          }
+        }
+        //计算连号
+        for(var i=0;i<this.lotteryLostHighLightMatrix.length;i++){
+        	for(var j=0;j<=48;j++){
+        		if(this.lotteryLostHighLightMatrix[i][j].isEmpty===1){
+        			var t = j+1;
+        			while(t<=48 && this.lotteryLostHighLightMatrix[i][t].isEmpty===1){
+                this.lotteryLostHighLightMatrix[i][t].isConsecutive = true;
+                t++;
+              }
+            }
+          }
+        }
+
       },
     	getLotteryData(phaseNum){
     		axios.post('/lottery/getHistoryData',{phaseNum:phaseNum}).then((resp)=>{
@@ -308,13 +375,12 @@
 
 <style lang="less" type="text/less" scoped>
   .bottom-padding{
-    height:100px;
+    height:200px;
     width:100%;
   }
   .wrap{
     margin: 20px auto;
     width:1200px;
-    min-height:600px;
     background-color: #fff;
     border:1px solid #d3d3d3;
     border-radius: 10px;
@@ -462,6 +528,7 @@
       .lottery-ball-highlight{
         background-color: #71bded!important;
       }
+
       //红球蓝球分割线
       td:nth-child(34),th:nth-child(34),td:nth-child(1),th:nth-child(1){
         border-right:1px solid #d6d6d6;
@@ -486,13 +553,39 @@
       .blue-ball{
         background-color: #2c71e0;
       }
+      //重号样式
+      .repeated-ball{
+        background-color: #e08921!important;
+      }
+      //连号样式
+      .consecutive-ball{
+        background-color: #5fb7e0 !important;
+      }
       //分隔线
       .sep-line{
         border-bottom: 1px solid #bfbfbf !important;
       }
     }
     .lottery-data-desc{
-      height:50px;
+      padding: 15px;
+      .lottery-data-desc-title{
+        padding-left: 50px;
+        height:35px;
+        font-weight: bold;
+        color:#898989;
+        background: url('./../../assets/icon/lottery-param-desc.png') left center no-repeat;
+        background-size: 35px 35px;
+        line-height: 35px;
+      }
+      .lottery-param{
+        span{
+          color: #575757;
+          font-weight: bold;
+        }
+        color: #6a6a6a;
+        font-size: 13px;
+        margin-top: 10px;
+      }
     }
   }
 </style>
