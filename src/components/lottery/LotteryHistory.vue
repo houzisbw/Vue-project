@@ -84,10 +84,10 @@
           <span>遗漏高亮:</span>&nbsp;高亮显示每个球自上期开出到本期间隔的期数
         </div>
         <div class="lottery-param">
-          <span>重号:</span>&nbsp;以橙色标注出与上期开奖号相同的号
+          <span>重号:</span>&nbsp;以<span class="orange">橙色</span>标注出与上期开奖号相同的号
         </div>
         <div class="lottery-param">
-          <span>连号:</span>&nbsp;以蓝色标注出每期相邻的号码
+          <span>连号:</span>&nbsp;以<span class="blue">蓝色</span>标注出每期相邻的号码
         </div>
         <div class="lottery-param">
           <span>折线:</span>&nbsp;用折线连接蓝球显示蓝球走势
@@ -128,9 +128,9 @@
         //遗漏高亮显示与否
         lostHighLightChecked:false,
         //重号显示与否
-        ballRepeatedChecked:false,
+        ballRepeatedChecked:true,
         //连号
-        ballConsecutiveChecked:false,
+        ballConsecutiveChecked:true,
         //显示遗漏高亮的二维数组,数组元素是对象,里面2个key，分别是原始数据和是否显示遗漏高亮(由原始数据计算出)
         //红蓝球一起,前33个红，后16个蓝
         lotteryLostHighLightMatrix:[]
@@ -177,7 +177,7 @@
         var regExp = /^\d{5}$/;
         //如果不合法
         if(!(regExp.test(start) && regExp.test(end) && start<=end)){
-          eventBus.$emit('LOTTERY_SEARCH_PARAM_INVALID');
+          eventBus.$emit('CONFIRM_DIALOG','您输入的期数不合法！');
           return;
         }
       	axios.post('/lottery/searchPhase',{
@@ -188,7 +188,7 @@
             //查询成功
             if(status === 1){
             	if(resp.data.lotteryData.length === 0){
-                eventBus.$emit('LOTTERY_SEARCH_EMPTY');
+                eventBus.$emit('CONFIRM_DIALOG','该期不存在,没有为您找到搜索结果！');
                 return;
               }
               this.lotteryDataList = resp.data.lotteryData;
@@ -581,6 +581,12 @@
         span{
           color: #575757;
           font-weight: bold;
+        }
+        .orange{
+          color: #e0a753;
+        }
+        .blue{
+          color:#409eff;
         }
         color: #6a6a6a;
         font-size: 13px;

@@ -113,6 +113,13 @@ router.post('/login',function(req,res,next){
                 //最大存活时间,单位:毫秒
                 maxAge: config.cookieMaxAge
               });
+            //一天免登录
+            }else{
+              res.cookie('username', username, {
+                path: '/',
+                //最大存活时间,单位:毫秒
+                maxAge: config.cookieMaxAge / 30
+              });
             }
             res.json({
               status:1,

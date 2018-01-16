@@ -385,13 +385,9 @@
             this.popDialog('╮(╯﹏╰）╭','您输入的手机号不合法！',1,'HIDE_SELF_DIALOG');
           })
 
-          //双色球查询不合法
-          eventBus.$on('LOTTERY_SEARCH_PARAM_INVALID',()=>{
-            this.popDialog('╮(╯﹏╰）╭','您输入的期数不合法！',1,'HIDE_SELF_DIALOG');
-          })
-          //双色球查询为空
-          eventBus.$on('LOTTERY_SEARCH_EMPTY',()=>{
-            this.popDialog('╮(╯﹏╰）╭','该期不存在,没有为您找到搜索结果！',1,'HIDE_SELF_DIALOG');
+          //通用对话框：点击关闭
+          eventBus.$on('CONFIRM_DIALOG',(content)=>{
+            this.popDialog('╮(╯﹏╰）╭',content,1,'HIDE_SELF_DIALOG');
           })
         }
     }

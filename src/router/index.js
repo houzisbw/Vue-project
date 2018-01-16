@@ -1,15 +1,20 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+//书签
 import BookMark from '@/components/BookMark'
 import AddBookMark from '@/components/AddBookMark'
 import User from  '@/components/User'
 import HotBookMark from '@/components/HotBookMark'
 import ImportBookMark from '@/components/ImportBookMark'
 import Default from '@/components/Default'
+//双色球
 import Lottery from '@/components/lottery/Lottery'
 import SmartChoose from '@/components/lottery/SmartChoose'
 import LotteryHistory from '@/components/lottery/LotteryHistory'
 import LotteryPrizeRule from '@/components/lottery/LotteryPrizeRule'
+//百度地图
+import BaiduMap from '@/components/map/BaiduMap'
+import BaiduMapHouseRenting from '@/components/map/BaiduMapHouseRenting'
 
 Vue.use(Router)
 
@@ -54,6 +59,17 @@ export default new Router({
         {
           path:'lotteryPrizeRule',
           component:LotteryPrizeRule
+        }
+      ]
+    },
+    //百度地图路由，负责地图业务
+    {
+      path:'/baidumap',
+      component:BaiduMap,
+      children:[
+        {
+          path:'houseRenting',
+          component:BaiduMapHouseRenting
         }
       ]
     },

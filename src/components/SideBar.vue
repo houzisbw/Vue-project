@@ -8,7 +8,7 @@
               <li v-for="(subitem,subindex) in item.subMenu"  :key="subitem.menuName" >
                 <router-link :to="subitem.menuLink"
                              class="second-a"
-                             :style="{background: 'url(' + subitem.menuIcon + ') 27% center no-repeat',backgroundSize: '20px 20px'}"
+                             :style="{background: 'url(' + subitem.menuIcon + ') 27% center no-repeat',backgroundSize: '25px 25px'}"
                              active-class="subMenuActive">
                   {{subitem.menuName}}
                 </router-link>
@@ -67,7 +67,7 @@
                     ]
                   },
                   {
-                    menuName:'双色球',
+                    menuName:'双色球 , 大不同',
                     menuIcon:'sidebar-double-color',
                     menuOpenIcon:'sidebar-double-color-open',
                     isActive:false,
@@ -85,14 +85,37 @@
                       {
                         menuName:'中奖细则',
                         menuLink:'/lottery/lotteryPrizeRule',
-                        menuIcon:require('./../assets/icon/lotteryexpert.png')
+                        menuIcon:require('./../assets/icon/lotterymoney.png')
                       }
                     ]
                   },
                   {
-                    menuName:'百度地图2',
-                    menuIcon:'sidebar-book',
-                    menuOpenIcon:'sidebar-book-open',
+                    menuName:'城市地图 , 热点分析',
+                    menuIcon:'sidebar-baidu-map',
+                    menuOpenIcon:'sidebar-baidu-map-open',
+                    isActive:false,
+                    subMenu:[
+                      {
+                        menuName:'租房助手',
+                        menuLink:'/baidumap/houseRenting',
+                        menuIcon:require('./../assets/icon/baidu-map-house-rent.png')
+                      },
+                      {
+                        menuName:'查看地图',
+                        menuLink:'/y',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                      },
+                      {
+                        menuName:'修改地图',
+                        menuLink:'/u',
+                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                      }
+                    ]
+                  },
+                  {
+                    menuName:'网易云音乐',
+                    menuIcon:'sidebar-music',
+                    menuOpenIcon:'sidebar-music-open',
                     isActive:false,
                     subMenu:[
                       {
@@ -154,9 +177,9 @@
         width:100%;
         display: inline-block;
         padding:20px 30px 20px @firstLevelPaddingLeft;
-        font-size: 18px;
+        font-size: 16px;
+        font-weight: 500;
         color:@firstLevelColor;
-        font-weight: 600;
         font-family: "Microsoft YaHei";
         cursor: pointer;
         //重要，是a标签的hover状态，不是li，一定注意
@@ -185,6 +208,7 @@
         //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
         background-size:30px 30px,20px 20px;
       }
+
       //双色球
       .sidebar-double-color{
         background: url('./../assets/icon/double-color.png') 8% center no-repeat,
@@ -198,12 +222,39 @@
         //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
         background-size:30px 30px,20px 20px;
       }
+
+      //百度地图
+      .sidebar-baidu-map{
+        background: url('./../assets/icon/baidu-map.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-right.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
+      .sidebar-baidu-map-open{
+        background: url('./../assets/icon/baidu-map.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-down.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
+      //网易云音乐
+      .sidebar-music{
+        background: url('./../assets/icon/netease-music.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-right.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
+      .sidebar-music-open{
+        background: url('./../assets/icon/netease-music.png') 8% center no-repeat,
+        url('./../assets/icon/arrow-down.png') 95% center no-repeat ;
+        //对应多个图片下的每个图片的尺寸,逗号隔开, 20px 20px
+        background-size:30px 30px,20px 20px;
+      }
       .second-level{
         //给ul加padding会导致动画跳跃，因为height不包含padding
         //padding-top: 20px;
         //padding-bottom: 20px;
         text-align: center;
-        background-color: #74bbff;
+        background-color: #5fb0ff;
         //这个很关键，不隐藏掉溢出的内容的话菜单会显示重叠
         overflow: hidden;
         //内阴影

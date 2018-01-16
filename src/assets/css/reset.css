@@ -44,7 +44,10 @@ a{
   text-decoration:none;
 }
 
-
+/*去掉百度地图左下角图标*/
+.anchorBL{
+  display:none;
+}
 /*清除浮动*/
 .clearfix:after{
   display: block;

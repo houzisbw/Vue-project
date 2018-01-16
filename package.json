@@ -28,6 +28,7 @@
     "vue": "^2.5.2",
     "vue-infinite-scroll": "^2.0.2",
     "vue-router": "^3.0.1",
+    "vue-slider-component": "^2.4.8",
     "vuex": "^3.0.1",
     "webpage": "^0.3.0"
   },
