@@ -9,7 +9,7 @@
         <!--内容区域选项-->
         <div class="content">
           <div class="input-wrap">
-            <input type="text" class="search-input" placeholder="输入小区名字" v-model.trim="keyword">
+            <input type="text" class="search-input" placeholder="输入小区或地区名字" v-model.trim="keyword" @keyup.enter="searchEstate">
             <button class="search-button" @click="searchEstate">搜索</button>
           </div>
           <!--搜索选项-->
@@ -33,6 +33,18 @@
                           class="slider">
               </vue-slider>
               <span class="search-range">{{rangeValue | meter}}</span>
+            </div>
+            <!--小区设施选项-->
+            <div class="option-wrap ">
+              <span class="option-title">设施:</span>
+              <ul class="option-city">
+                <li v-for="(facility,index) in facilityList"
+                    @click="changeFacility(index)"
+                    :class="{'item-active':checkActive(index)}">
+                  {{facility}}
+                </li>
+              </ul>
+              <span class="search-range search-range-offset">点击选项展示/隐藏对应地图标注</span>
             </div>
           </div>
         </div>
@@ -70,6 +82,8 @@
 </template>
 
 <script>
+  import _ from 'lodash'
+  //事件总线
   import {eventBus} from './../../eventBus'
   //地图
   import {MP} from './../../baiduMap'
@@ -86,6 +100,10 @@
       }
     },
     mounted(){
+			//初始化marker容器
+      for(var i=0;i<this.facilityList.length;i++){
+      	this.markerArray.push([]);
+      }
 			//初始化地图,参数是ak密钥
       this.$nextTick(()=>{
         MP('oiu5kqXt7U3ljISAeX8UZZXlgOHIaZac').then(BMap=>{
@@ -102,12 +120,13 @@
                 anchor: BMAP_ANCHOR_TOP_LEFT,
                 // LARGE类型
                 type: BMAP_NAVIGATION_CONTROL_LARGE
-
               }
             ));
             this.map.addControl(new BMap.ScaleControl());
             this.map.addControl(new BMap.OverviewMapControl());
             this.map.addControl(new BMap.MapTypeControl());
+            //添加自定义控件
+            this.myControls();
 
           });
       });
@@ -122,16 +141,31 @@
 				//地图实例
         map:null,
         //输入地点坐标:经度，纬度
-        estatePoint:{
-        	lng:'',
-          lat:''
-        },
+        estatePoint:null,
 				isOverlayShow:true,
         //城市
         cityList:['北京', '上海','深圳','成都','广州','杭州','武汉','重庆'],
         cityActiveIndex:3,
+        //设施
+        facilityList:['医院', '超市', '公园', '地铁', '电影院', '学校'],
+        //设施图标,一一对应上面
+        facilityIconList:[
+        	require('./../../assets/icon/map-hospital.png'),
+          require('./../../assets/icon/map-supermarket.png'),
+          require('./../../assets/icon/map-park.png'),
+          require('./../../assets/icon/map-metro.png'),
+          require('./../../assets/icon/map-cinema.png'),
+          require('./../../assets/icon/map-school.png')
+        ],
+        //marker容器，存放上述设施的marker标注
+        markerArray:[],
+        //选中的设施列表:里面存放index
+        selectedFacilityList:[1,4],
+        totalFacilityList:[0,1,2,3,4,5],
         //搜索半径
         rangeValue:1000,
+        //搜索结果的对象,key是设施名字
+        searchResultArray:{},
         //滑块配置
         sliderOptions:{
 					min:500,
@@ -156,6 +190,45 @@
       }
     },
     methods:{
+    	//自定义控件
+      myControls(){
+      	//点击回到小区中心
+        function positionResetControl(){
+          // 设置默认停靠位置和偏移量
+          this.defaultAnchor = BMAP_ANCHOR_TOP_LEFT;
+          this.defaultOffset = new BMap.Size(21, 230);
+        }
+        positionResetControl.prototype = new BMap.Control();
+        //初始化方法，当调用map.addControl()方法添加自定义控件时，API会调用该对象的initialize()方法用来初始化控件
+        var self = this;
+        positionResetControl.prototype.initialize = function(map){
+          // 创建一个DOM元素
+          var div = document.createElement("div");
+          // 设置样式
+          div.setAttribute('title','回到中心');
+          div.style.cursor = "pointer";
+          div.style.width = "20px";
+          div.style.height = "20px";
+          div.style.borderRadius = "5px";
+          div.style.border = "1px solid grey";
+          //注意必须require才行
+          div.style.background = "url(" + require('./../../assets/icon/resetPosition.png') + ') center center no-repeat white';
+          div.style.backgroundSize = "18px 18px";
+          // 绑定事件:回到搜索位置中心
+          div.onclick = function(e){
+            map.panTo(self.estatePoint);
+          }
+          // 添加DOM元素到地图中
+          map.getContainer().appendChild(div);
+          // 将DOM元素返回
+          return div;
+        }
+        // 创建控件实例
+        var myPositionResetControl = new positionResetControl();
+        // 添加到地图当中
+        this.map.addControl(myPositionResetControl);
+
+      },
     	//添加地图标注
       addMapOverlays(centerPoint,radius){
         //添加地图标注：圆心
@@ -163,37 +236,90 @@
         	strokeColor:"blue",
           strokeWeight:2,
           strokeOpacity:0.4,
-          fillOpacity:0.3,
+          fillOpacity:0.1,
           fillColor:'#ffbc76'
         });
         this.map.addOverlay(circle);
+      },
+      //添加标注，icon自定义
+      addMarker(point,iconPath,title,url,facilityIndex,isSelected){
+        var myIcon = new BMap.Icon(iconPath, new BMap.Size(32, 32), {
+          // 指定定位位置。
+          // 当标注显示在地图上时，其所指向的地理位置距离图标左上
+          // 角各偏移10像素和25像素。您可以看到在本例中该位置即是
+          // 图标中央下端的尖角位置。
+          anchor: new BMap.Size(0, 0)
+        });
+        // 创建标注对象并添加到地图
+        var marker = new BMap.Marker(point, {icon: myIcon});
+        marker.onclick = ()=>{
+        	//显示信息窗口
+          var opts = {
+          	width:0,
+            height:0,
+            title:title
+          };
+          var infoWindow = new BMap.InfoWindow(url, opts);
+          marker.openInfoWindow(infoWindow)
+        };
+        if(isSelected) this.map.addOverlay(marker);
+        //将marker添加进容器
+        this.markerArray[facilityIndex].push(marker);
       },
     	//搜索坐标点附近
       searchPointNearby(point){
         this.local = new BMap.LocalSearch(this.map,
           {
-            //搜索结束，展示结果
+            //搜索结束，展示结果(多关键字检索:results是数组,每个元素是LocalResult)
             onSearchComplete:(results)=>{
               if (this.local.getStatus() === BMAP_STATUS_SUCCESS){
-                // 判断状态是否正确
-                var s = [];
-                for (var i = 0; i < results.getCurrentNumPois(); i ++){
-                  s.push(results.getPoi(i));
-                }
-                //添加地图标注
-                this.addMapOverlays(point,this.rangeValue);
+                for(var j=0;j<results.length;j++){
+                	var keyword = this.facilityList[j];
+                  this.searchResultArray[keyword] = [];
+                  for (var i = 0; i < results[j].getCurrentNumPois(); i++){
+                  	//保存名字和位置,标题信息
+                  	this.searchResultArray[keyword].push({
+                  		name:results[j].getPoi(i).title,
+                      position:results[j].getPoi(i).point,
+                      url:results[j].getPoi(i).url
+                  	});
 
+                  }
+                }
+                //添加地图标注:圆形区域
+                this.addMapOverlays(point,this.rangeValue);
+                //添加地图标注：各种设施
+                for(let j=0;j<this.facilityList.length;j++){
+                	//设施名字
+                	var facilityShow = this.facilityList[j];
+                	//如果该设施是已经选择了的
+                  var isSelected = false;
+                  if(this.selectedFacilityList.indexOf(j) !== -1){
+                    isSelected = true;
+                  }
+                  for(var i=0;i<this.searchResultArray[facilityShow].length;i++){
+                    let point = this.searchResultArray[facilityShow][i].position,
+                        name = this.searchResultArray[facilityShow][i].name,
+                        url = this.searchResultArray[facilityShow][i].url;
+                    this.addMarker(point,this.facilityIconList[j],name,url,j,isSelected);
+                  }
+                }
               }
             }
           });
 
-        //第一个参数是关键字，第二个是搜索中心，第三个是半径
-        this.local.searchNearby('网吧',point,this.rangeValue)
+        //第一个参数是关键字(此处为数组，多关键字搜索)，第二个是搜索中心，第三个是半径
+        this.local.searchNearby(this.facilityList,point,this.rangeValue)
       },
     	//搜索小区
       searchEstate(){
-      	//清除覆盖物
+        //初始化marker容器
+        for(var i=0;i<this.facilityList.length;i++){
+          this.markerArray[i] = [];
+        }
+      	//清除覆盖物和结果数组
         this.map.clearOverlays();
+        this.searchResultArray = [];
       	//搜索结果不能为空
       	if(this.keyword === ''){
           eventBus.$emit('CONFIRM_DIALOG','关键字不能为空哦!');
@@ -206,8 +332,7 @@
         myGeo.getPoint(this.keyword, (point)=>{
             if (point) {
             	//保存坐标点
-            	this.estatePoint.lng = point.lng;
-              this.estatePoint.lat = point.lat;
+            	this.estatePoint = point;
               this.map.centerAndZoom(point, 16);
               //添加文字说明
               var label = new BMap.Label(this.keyword);
@@ -221,14 +346,14 @@
               })
               var marker  = new BMap.Marker(point);
               marker.setLabel(label);
-              //跳动动画
-              marker.setAnimation(BMAP_ANIMATION_BOUNCE)
               this.map.addOverlay(marker);
+              //跳动动画,必须在addOverlay后设置
+              marker.setAnimation(BMAP_ANIMATION_BOUNCE);
               //根据坐标点搜索附近的设施(不能直接使用searchNearby,因为center是字符串的话半径被忽略)
               this.searchPointNearby(point);
             }else{
             	//未搜索到结果
-              eventBus.$emit('CONFIRM_DIALOG','在'+this.cityList[this.cityActiveIndex]+'市没有找到'+this.keyword+'的相关信息哦!');
+              eventBus.$emit('CONFIRM_DIALOG','在 '+this.cityList[this.cityActiveIndex]+' 市没有找到 '+this.keyword+' 的相关信息哦!');
             }
           },
           this.cityList[this.cityActiveIndex]);
@@ -238,6 +363,36 @@
       },
       changeCity(index){
 				this.cityActiveIndex = index;
+      },
+      //检查是否active选中
+      checkActive(index){
+      	return this.selectedFacilityList.indexOf(index) !== -1;
+      },
+      //多选toggle
+      changeFacility(index){
+        //如果已经存在于选中列表则去除
+        if(this.selectedFacilityList.indexOf(index) !== -1){
+          //这里必须赋值给原数组，否则不会触发视图更新
+          this.selectedFacilityList = _.remove(this.selectedFacilityList, function(item){
+            return item !== index;
+          })
+          //删除marker
+          for(var k=0;k<this.markerArray[index].length;k++){
+          	let marker = this.markerArray[index][k];
+          	this.map.removeOverlay(marker);
+          }
+
+        }else{
+        	//加入列表
+          this.selectedFacilityList.push(index);
+          //添加marker
+          //删除marker
+          for(var k=0;k<this.markerArray[index].length;k++){
+            let marker = this.markerArray[index][k];
+            this.map.addOverlay(marker);
+          }
+        }
+
       }
     }
 	}
@@ -276,6 +431,7 @@
     }
     //地图
     .map-container{
+      margin-top: 50px;
       height:600px;
       border-top:1px solid #cbcbcb;
       border-bottom:1px solid #cbcbcb;
@@ -330,6 +486,10 @@
         margin: 10px auto 0 auto;
         width:600px;
         height:100px;
+        .option-wrap:last-child{
+          border: none;
+          padding-top:10px;
+        }
         .option-wrap{
           padding: 5px 0;
           border-bottom:1px dashed #cbcbcb;
@@ -342,6 +502,9 @@
             top:5px;
             font-size: 13px;
             color:#ffa000;
+          }
+          .search-range-offset{
+            margin-top: 5px;
           }
           .slider{
             position: relative;
