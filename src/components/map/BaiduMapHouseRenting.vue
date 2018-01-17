@@ -51,9 +51,14 @@
         <!--地图容器-->
         <div class="map-container" id="map-container">
         </div>
+        <!--数据统计-->
+        <div class="facility-graph-wrap" v-if="isFacilityGraphShow">
+          <div class="facility-graph" id="facility-graph">
+          </div>
+        </div>
         <!--遮罩层-->
         <transition name="myFade">
-          <div class="city-wrap" v-if="isOverlayShow">
+          <div class="city-wrap" v-show="isOverlayShow">
             <div class="overlay">
             </div>
             <!--租房助手简介-->
@@ -82,6 +87,9 @@
 </template>
 
 <script>
+  //引入echarts
+  import echarts from 'echarts'
+  //lodash
   import _ from 'lodash'
   //事件总线
   import {eventBus} from './../../eventBus'
@@ -100,10 +108,12 @@
       }
     },
     mounted(){
-			//初始化marker容器
+			//初始化marker容器,设施个数容器
       for(var i=0;i<this.facilityList.length;i++){
       	this.markerArray.push([]);
+      	this.facilityNumObj[this.facilityList[i]] = 0;
       }
+
 			//初始化地图,参数是ak密钥
       this.$nextTick(()=>{
         MP('oiu5kqXt7U3ljISAeX8UZZXlgOHIaZac').then(BMap=>{
@@ -113,7 +123,7 @@
             // 创建点坐标
             this.map.centerAndZoom(point, 12);
               //开启鼠标缩放
-            this.map.enableScrollWheelZoom(true);
+            //this.map.enableScrollWheelZoom(true);
               //添加控件
             this.map.addControl(new BMap.NavigationControl({
                 // 靠左上角位置
@@ -134,7 +144,9 @@
     },
     data(){
 			return{
-				//local
+				//是否展示数据图表
+        isFacilityGraphShow:false,
+				//搜索
         local:null,
 				//搜索关键字
         keyword:'',
@@ -148,6 +160,8 @@
         cityActiveIndex:3,
         //设施
         facilityList:['医院', '超市', '公园', '地铁', '电影院', '学校'],
+        //设施个数
+        facilityNumObj:{},
         //设施图标,一一对应上面
         facilityIconList:[
         	require('./../../assets/icon/map-hospital.png'),
@@ -256,10 +270,9 @@
         	//显示信息窗口
           var opts = {
           	width:0,
-            height:0,
-            title:title
+            height:0
           };
-          var infoWindow = new BMap.InfoWindow(url, opts);
+          var infoWindow = new BMap.InfoWindow(title, opts);
           marker.openInfoWindow(infoWindow)
         };
         if(isSelected) this.map.addOverlay(marker);
@@ -270,12 +283,19 @@
       searchPointNearby(point){
         this.local = new BMap.LocalSearch(this.map,
           {
+          	//每页容量,在地图上一次展示的数量
+            pageCapacity:20,
             //搜索结束，展示结果(多关键字检索:results是数组,每个元素是LocalResult)
             onSearchComplete:(results)=>{
               if (this.local.getStatus() === BMAP_STATUS_SUCCESS){
+              	//展示图表
+                this.isFacilityGraphShow = true;
                 for(var j=0;j<results.length;j++){
                 	var keyword = this.facilityList[j];
                   this.searchResultArray[keyword] = [];
+                  //保存搜索总数量
+                  this.facilityNumObj[keyword] = results[j].getNumPois();
+                  //当前页结果数
                   for (var i = 0; i < results[j].getCurrentNumPois(); i++){
                   	//保存名字和位置,标题信息
                   	this.searchResultArray[keyword].push({
@@ -283,8 +303,55 @@
                       position:results[j].getPoi(i).point,
                       url:results[j].getPoi(i).url
                   	});
-
                   }
+                  //画图表
+                  //初始化图表div,注意必须nexttick才行，否则dom没有更新，无法获取到div
+                  //因为v-if控制了dom的显示
+                  this.$nextTick(()=>{
+                    var myChart = echarts.init(document.getElementById('facility-graph'));
+                    var facilityDataList = [];
+                    //获取设施个数数组
+                    for(var i=0;i<this.facilityList.length;i++){
+                      facilityDataList.push(this.facilityNumObj[this.facilityList[i]]);
+                    }
+                    var options = {
+                      title: {
+                        text: this.keyword+'附近各类设施数量',
+                        subtext: '该区域内总数(地图上最多显示20个)'
+                      },
+                      tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                          type: 'shadow'
+                        }
+                      },
+                      legend: {
+                        data: ['设施个数']
+                      },
+                      grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                      },
+                      xAxis: {
+                        type: 'value',
+                        boundaryGap: [0, 0.01]
+                      },
+                      yAxis: {
+                        type: 'category',
+                        data: this.facilityList
+                      },
+                      series: [
+                        {
+                          name: '2012年',
+                          type: 'bar',
+                          data: facilityDataList
+                        }
+                      ]
+                    }
+                    myChart.setOption(options)
+                  })
                 }
                 //添加地图标注:圆形区域
                 this.addMapOverlays(point,this.rangeValue);
@@ -304,6 +371,7 @@
                     this.addMarker(point,this.facilityIconList[j],name,url,j,isSelected);
                   }
                 }
+
               }
             }
           });
@@ -412,6 +480,14 @@
     border-radius: 10px;
     box-shadow: 0 0 3px 3px #d3d3d3;
     position: relative;
+    .facility-graph-wrap{
+      height:400px;
+      .facility-graph{
+        width:70%;
+        height:300px;
+        margin: 40px auto;
+      }
+    }
     .title {
       height: 50px;
       border-bottom: 1px solid #cbcbcb;
