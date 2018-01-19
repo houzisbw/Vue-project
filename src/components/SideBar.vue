@@ -8,7 +8,7 @@
               <li v-for="(subitem,subindex) in item.subMenu"  :key="subitem.menuName" >
                 <router-link :to="subitem.menuLink"
                              class="second-a"
-                             :style="{background: 'url(' + subitem.menuIcon + ') 27% center no-repeat',backgroundSize: '25px 25px'}"
+                             :style="{background: 'url(' + subitem.menuIcon + ') 23% center no-repeat',backgroundSize: '25px 25px'}"
                              active-class="subMenuActive">
                   {{subitem.menuName}}
                 </router-link>
@@ -101,12 +101,12 @@
                         menuIcon:require('./../assets/icon/baidu-map-house-rent.png')
                       },
                       {
-                        menuName:'查看地图',
+                        menuName:'构思中.',
                         menuLink:'/y',
                         menuIcon:require('./../assets/icon/hot-bookmark.png')
                       },
                       {
-                        menuName:'修改地图',
+                        menuName:'构思中..',
                         menuLink:'/u',
                         menuIcon:require('./../assets/icon/hot-bookmark.png')
                       }
@@ -119,17 +119,17 @@
                     isActive:false,
                     subMenu:[
                       {
-                        menuName:'添加地图',
-                        menuLink:'/t',
-                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                        menuName:'网易云热歌分析',
+                        menuLink:'/music/hotMusicAnalysis',
+                        menuIcon:require('./../assets/icon/music-hot.png')
                       },
                       {
-                        menuName:'查看地图',
+                        menuName:'歌手爱好分析',
                         menuLink:'/y',
-                        menuIcon:require('./../assets/icon/hot-bookmark.png')
+                        menuIcon:require('./../assets/icon/music-singer.png')
                       },
                       {
-                        menuName:'修改地图',
+                        menuName:'构思中...',
                         menuLink:'/u',
                         menuIcon:require('./../assets/icon/hot-bookmark.png')
                       }
@@ -251,9 +251,7 @@
       }
       .second-level{
         //给ul加padding会导致动画跳跃，因为height不包含padding
-        //padding-top: 20px;
-        //padding-bottom: 20px;
-        text-align: center;
+
         background-color: #5fb0ff;
         //这个很关键，不隐藏掉溢出的内容的话菜单会显示重叠
         overflow: hidden;
@@ -265,6 +263,8 @@
           /*必须要这一句，才有高度*/
           display: inline-block;
           box-sizing: border-box;
+          //文字左对齐
+          text-indent: 90px;
           -moz-box-sizing: border-box;
           -webkit-box-sizing: border-box;
           width:100%;

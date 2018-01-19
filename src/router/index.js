@@ -15,6 +15,9 @@ import LotteryPrizeRule from '@/components/lottery/LotteryPrizeRule'
 //百度地图
 import BaiduMap from '@/components/map/BaiduMap'
 import BaiduMapHouseRenting from '@/components/map/BaiduMapHouseRenting'
+//网易云音乐
+import Music from '@/components/music/Music'
+import HotMusicAnalysis from '@/components/music/HotMusicAnalysis'
 
 Vue.use(Router)
 
@@ -72,6 +75,18 @@ export default new Router({
           component:BaiduMapHouseRenting
         }
       ]
+    },
+    //网易云音乐路由,负责音乐歌词分析
+    {
+      path:'/music',
+      component:Music,
+      children:[
+        {
+          path:'hotMusicAnalysis',
+          component:HotMusicAnalysis
+        }
+      ]
+
     },
     //根路径
     {

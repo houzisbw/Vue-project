@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^0.17.1",
     "cheerio": "^1.0.0-rc.2",
+    "chromedriver": "^2.34.1",
     "clipboard": "^1.7.1",
     "cookie-parser": "^1.4.3",
     "echarts": "^3.8.5",
@@ -23,7 +24,9 @@
     "mongoose": "^4.13.7",
     "morgan": "^1.9.0",
     "node-schedule": "^1.2.5",
+    "nodejieba": "^2.2.5",
     "phantom": "^4.0.12",
+    "selenium-webdriver": "^4.0.0-alpha.1",
     "superagent": "^3.8.2",
     "vue": "^2.5.2",
     "vue-infinite-scroll": "^2.0.2",
