@@ -20,6 +20,9 @@ module.exports = {
       },
       '/lottery/*':{
         target:'http://localhost:3000'
+      },
+      '/music/*':{
+        target:'http://localhost:3000'
       }
     },
 

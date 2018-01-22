@@ -10,6 +10,7 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var phantom = require('./routes/phantom');
 var lottery = require('./routes/lottery');
+var music = require('./routes/hot_music');
 //双色球爬虫接口,定时执行
 var getLotteryData = require('./crawler/lotteryCrawler');
 schedule.scheduleJob('50 23 * * 2,4,7',getLotteryData.getLotteryDataWeekly)
@@ -49,7 +50,9 @@ app.use('/user', users);
 //网页截图和解析html结构
 app.use('/phantom',phantom);
 //彩票部分
-app.use('/lottery',lottery)
+app.use('/lottery',lottery);
+//网易云音乐部分
+app.use('/music',music);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

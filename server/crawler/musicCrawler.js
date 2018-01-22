@@ -9,6 +9,22 @@ var http = require("http"),
   axios  = require('axios'),
   nodejieba = require('nodejieba');
 
+//引入数据库
+var HotMusicList = require('./../models/Crawler/hotMusicList');
+var HotMusicLyric = require('./../models/Crawler/hotMusicLyric');
+//链接数据库
+var mongoose = require('mongoose')
+//这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
+mongoose.connect('mongodb://127.0.0.1:27017/flash')
+//监听:成功
+mongoose.connection.on("connected",function(){
+  console.log('数据库链接成功');
+})
+//监听:失败
+mongoose.connection.on("error",function(){
+  console.log('数据库链接失败');
+})
+
 const {Builder, By, Key, until} = require('selenium-webdriver');
 
 //重要
@@ -49,13 +65,19 @@ function splitWordByJieba(wordsStr){
   sortList.sort(function(a,b){
     return b.cnt - a.cnt;
   });
-  //取前100个展示，但是要保存所有的
-  var topN = sortList.length<100 ? sortList.length : 100;
-  for(var i=0;i<topN;i++){
-    console.log(sortList[i].word+' '+sortList[i].cnt)
-  }
-
-
+  //取前100个展示，但是要保存500个
+  var topN = sortList.length<500 ? sortList.length : 500;
+  //先删除所有的歌词
+  HotMusicLyric.remove({},function(err,docs){
+    for(var i=0;i<topN;i++){
+      console.log(sortList[i].word+' '+sortList[i].cnt)
+      var hotMusicLyric = new HotMusicLyric({
+        word:sortList[i].word,
+        num:sortList[i].cnt
+      })
+      hotMusicLyric.save();
+    }
+  })
 }
 
 
@@ -166,7 +188,7 @@ function getSongData(){
   });
 }
 
-//获取热门歌曲歌手名字
+//获取热门歌曲歌手名字,以后要写在前端，防止服务器ip被封
 function getHotListSingerName(){
   //热门歌曲链接，注意这里没有#,而浏览器里面有#
   var hotMusicUrl = 'http://music.163.com/discover/toplist?id=3778678';
@@ -183,10 +205,12 @@ function getHotListSingerName(){
       txt.then((array)=>{
         var singerNum = array.length;
         var cnt = 0;
+        var singerArray = [];
         for(let i=0;i<array.length;i++) {
           //不加延时会导致部分promise无法正确执行
           setTimeout(()=>{
             array[i].getAttribute('title').then((r)=>{
+              singerArray.push(r);
               cnt++;
               if(singerNameObj.hasOwnProperty(r)){
                 singerNameObj[r]++;
@@ -195,25 +219,74 @@ function getHotListSingerName(){
               }
               //全部获取完成
               if(cnt === singerNum){
-                //进行数量排序降序排列
-                var sortList = [];
-                for(var key in singerNameObj){
-                  if(singerNameObj.hasOwnProperty(key)){
-                    sortList.push({
-                      name:key,
-                      cnt:singerNameObj[key]
-                    })
+                //获取歌手歌曲名字
+                driver.findElements(By.css('.txt b')).then((songArray)=>{
+                  var songNum = songArray.length;
+                  var cnt_song = 0;
+                  var songNameArray = [];
+                  for(let i=0;i<songArray.length;i++){
+                    //不加延时会导致部分promise无法正确执行
+                    setTimeout(()=>{
+                      songArray[i].getAttribute('title').then((re)=>{
+                        cnt_song++;
+                        songNameArray.push(re);
+                        //全部歌曲爬取完成,保存数据库
+                        if(cnt_song === songNum) {
+                            //最终要保存到数据库的是对象数组
+                            var finalSingerObj = {};
+                            for(var j=0;j<songNameArray.length;j++){
+                              //先统计出singer对象,key为name，value为对象(songList:[],songNum:int)
+                              if(finalSingerObj.hasOwnProperty(singerArray[j])){
+                                finalSingerObj[singerArray[j]].songList.push(songNameArray[j]);
+                                finalSingerObj[singerArray[j]].songNum++;
+                              }else{
+                                //这里必须先初始化为空对象才行
+                                finalSingerObj[singerArray[j]] = {};
+                                finalSingerObj[singerArray[j]].songList = [];
+                                finalSingerObj[singerArray[j]].songList.push(songNameArray[j]);
+                                finalSingerObj[singerArray[j]].songNum = 1;
+                              }
+                            }
+                            //获取歌手的图片url
+                            var url = 'http://music.163.com/api/playlist/detail?id=3778678';
+                            axios.get(url).then((results)=>{
+                              var tracks = results.data.result.tracks;
+                              //保存歌手对应的图片url
+                              var singerPicObj={};
+                              for(var i=0;i<tracks.length;i++){
+                                  var picUrl = tracks[i].album.picUrl;
+                                  var nameList = [];
+                                  //合唱的话名字是由多个人拼接而成,用/隔开,而爬虫爬取的名字则是拼接后的名字，这里要注意
+                                  for(var j=0;j<tracks[i].artists.length;j++){
+                                    nameList.push(tracks[i].artists[j].name);
+                                  }
+                                  let name = nameList.join('/');
+                                  singerPicObj[name] = picUrl;
+                              }
+                              //存入数据库,先遍历对象得到对象数组{singerName:string,songList:[],songNum:int}
+                              //首先得清空所有数据,防止重复的数据被保存
+                              HotMusicList.remove({},(err,docs)=>{
+                                for(let key in finalSingerObj){
+                                  if(finalSingerObj.hasOwnProperty(key)){
+                                    var hotMusicList = new HotMusicList({
+                                      singerName:key,
+                                      songNum:finalSingerObj[key].songNum,
+                                      songList:finalSingerObj[key].songList,
+                                      avatarUrl:singerPicObj[key]
+                                    });
+                                    //保存最新的数据
+                                    hotMusicList.save();
+                                  }
+                                }
+                                //退出浏览器
+                                driver.quit();
+                              })
+                            })
+                        }
+                      })
+                    },5*i);
                   }
-                }
-                //降序排列
-                sortList.sort(function(a,b){
-                  return b.cnt - a.cnt;
                 });
-                
-                for(var i=0;i<sortList.length;i++){
-                  console.log(sortList[i].name+' '+sortList[i].cnt)
-                }
-
               }
             })
           },i*5)
@@ -224,5 +297,9 @@ function getHotListSingerName(){
 }
 
 
-getHotListSingerName()
-//getSongData();
+
+
+
+//getHotListSingerName()
+getSongData();
+
