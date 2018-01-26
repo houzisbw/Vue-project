@@ -70,7 +70,7 @@ function splitWordByJieba(wordsStr){
   //先删除所有的歌词
   HotMusicLyric.remove({},function(err,docs){
     for(var i=0;i<topN;i++){
-      console.log(sortList[i].word+' '+sortList[i].cnt)
+      //console.log(sortList[i].word+' '+sortList[i].cnt)
       var hotMusicLyric = new HotMusicLyric({
         word:sortList[i].word,
         num:sortList[i].cnt

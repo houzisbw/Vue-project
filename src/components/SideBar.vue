@@ -124,7 +124,7 @@
                         menuIcon:require('./../assets/icon/music-hot.png')
                       },
                       {
-                        menuName:'歌手爱好分析',
+                        menuName:'构思中..',
                         menuLink:'/y',
                         menuIcon:require('./../assets/icon/music-singer.png')
                       },

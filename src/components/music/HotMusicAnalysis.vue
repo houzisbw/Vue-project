@@ -56,6 +56,23 @@
             </div>
           </div>
         </div>
+        <!--歌词词语次数图表-->
+        <div class="section">
+          <!--标题-->
+          <div class="section-title-wrap">
+            <div class="section-title">
+              <span>热歌榜歌词统计</span>
+            </div>
+            <div class="update-time">
+              展示出现频率前100的歌词及次数
+            </div>
+          </div>
+          <!--内容-->
+          <div class="section-content clearfix">
+            <div id="lyrics-top-100">
+            </div>
+          </div>
+        </div>
       </div>
       <!--底部间隔-->
       <div class="bottom-padding">
@@ -64,6 +81,8 @@
 </template>
 
 <script>
+  import {eventBus} from './../../eventBus'
+  import echarts from 'echarts'
   import axios from 'axios'
   import d3Cloud from 'd3-cloud'
   //不能直接使用import d3 from 'd3'，否则引入不全
@@ -83,22 +102,104 @@
         	  this.hotSingerList = resp.data.singerInfoList;
         })
       },
+      showLyricsTop100(){
+          var myEchart = echarts.init(document.getElementById('lyrics-top-100'));
+          var options = {
+            title: {
+              text: '歌词出现次数(拖动右侧滑块放大/缩小显示区域)',
+              subtext: '',
+              subtextStyle:{
+                color:'#706d6d',
+                fontSize:14
+              }
+            },
+            tooltip: {
+              trigger: 'axis',
+              axisPointer: {
+                type: 'shadow'
+              }
+            },
+            legend: {
+              data: ['歌词'],
+              height:'1000'
+            },
+            grid: {
+              left: '5%',
+              right: '4%',
+              bottom: '3%',
+              containLabel: true
+            },
+            xAxis: {
+              type: 'value',
+              boundaryGap: [0, 0.01],
+              name:'歌词次数',
+              nameLocation:'center',
+              nameGap:20
+            },
+            yAxis: {
+              type: 'category',
+              data: this.lyricArray.map((item)=>{
+              	return item.word
+              }),
+              name:'歌词',
+              nameLocation:'center',
+              nameGap:100
+            },
+            series: [
+              {
+                name: '次数',
+                type: 'bar',
+                data: this.lyricArray.map((item)=>{
+                  return item.num
+                }),
+                stack: 'chart',
+                label: {
+                  normal: {
+                    position: 'right',
+                    show: true,
+                    formatter:function(obj){
+                      var c = obj['value'];
+                      return c+'次';
+                    },
+                    fontSize:13,
+                    fontWeight:'bold',
+                    color:"#c46f6f"
+
+                  }
+                }
+
+              }
+
+            ],
+            dataZoom: [
+              {
+                type: 'slider',
+                show: true,
+                yAxisIndex: [0],
+                left: '93%',
+                start: 0,
+                end: 30
+              }
+            ]
+          };
+
+          myEchart.setOption(options);
+      },
       //获取前100的歌词,并画出词云
       getLyricTop100(){
         axios.post('/music/hotMusicLyric',{num:100}).then((resp)=>{
         	if(resp.data.status !== -1){
-        		var arr = []
             this.lyricArray = resp.data.lyrics;
-            this.lyricArray.forEach(function(item){
-            	if(arr.indexOf(item.num)===-1){
-            		arr.push(item.num)
-              }
+            this.lyricArray.sort((a,b)=>{
+            	return b.num-a.num
             })
-            console.log(arr)
             //画词云
             this.drawLyricCloud();
+            //展示歌词
+            this.showLyricsTop100();
           }else{
         		//查询失败
+            eventBus.$emit('CONFIRM_DIALOG','歌词查询失败~');
           }
 
         })
@@ -113,7 +214,6 @@
       drawLyricCloud(){
         //文字颜色
         var textColor = ['#595b5a','#855452','#e17c78'];
-
         var layout = d3Cloud()
           .size([1000, 600])
           .words(this.lyricArray.map(function(d) {
@@ -126,6 +226,7 @@
           .on("end", draw);
 
         layout.start();
+
         function draw(words) {
           d3.select(".canvas-div").append("svg")
             .attr("width", layout.size()[0])
@@ -209,6 +310,11 @@
       //内容区域
       .section-content{
         margin-top: 20px;
+        #lyrics-top-100{
+          width:80%;
+          height:600px;
+          margin: 0 auto;
+        }
         .canvas-div{
           margin: 0 auto;
           width:1000px;

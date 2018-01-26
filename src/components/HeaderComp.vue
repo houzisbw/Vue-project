@@ -8,7 +8,7 @@
           <li v-if="!userNickName" class="li-hover"><a href="#" @click="showLogin">登录</a></li>
           <li v-if="userNickName" class="user-graph-li">
             <a class="user-graph">
-              <span class="user-profile"><img src="./../assets/icon/info-warning.png"></span>
+              <span class="user-profile"><img src="./../assets/icon/default-profile.png"></span>
               <!--登录成功后的用户选项(个人信息，退出等)-->
               <div class="user-options">
                 <ul>
@@ -102,21 +102,9 @@
                 userProfile:[
                   {
                   	eventName:'myInfoPage',
-                  	url:'/',
+                  	url:'/myPage',
                     name:'我的主页',
                     //注意必须require才行
-                    iconPath:require('./../assets/icon/user-profile-graph.png')
-                  },
-                  {
-                    eventName:'myInfoPage',
-                    url:'/',
-                    name:'我的主页',
-                    iconPath:require('./../assets/icon/user-profile-graph.png')
-                  },
-                  {
-                    eventName:'myInfoPage',
-                    url:'/',
-                    name:'我的主页',
                     iconPath:require('./../assets/icon/user-profile-graph.png')
                   },
                   {
@@ -176,6 +164,7 @@
                   	break;
                   }
                   case 'myInfoPage':{
+                  	this.$router.push('/myPage');
                   	break;
                   }
                   default:

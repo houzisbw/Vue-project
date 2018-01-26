@@ -18,6 +18,8 @@ import BaiduMapHouseRenting from '@/components/map/BaiduMapHouseRenting'
 //网易云音乐
 import Music from '@/components/music/Music'
 import HotMusicAnalysis from '@/components/music/HotMusicAnalysis'
+//个人主页
+import MyPage from '@/components/mypage/MyPage'
 
 Vue.use(Router)
 
@@ -87,6 +89,11 @@ export default new Router({
         }
       ]
 
+    },
+    //个人主页
+    {
+      path:'/myPage',
+      component:MyPage
     },
     //根路径
     {
