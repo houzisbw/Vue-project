@@ -23,7 +23,7 @@ import MyPage from '@/components/mypage/MyPage'
 
 Vue.use(Router)
 
-export default new Router({
+const router =  new Router({
   routes: [
     //user路由，里面子路由,这里User单独是一个组件，里面放置<router-view>，用于存放子组件
     {
@@ -93,7 +93,11 @@ export default new Router({
     //个人主页
     {
       path:'/myPage',
-      component:MyPage
+      component:MyPage,
+      //需要登录
+      meta:{
+        requireAuth:true
+      }
     },
     //根路径
     {
@@ -102,3 +106,24 @@ export default new Router({
     }
   ]
 })
+
+router.beforeEach((to,from,next)=>{
+  //如果需要登录
+  if(to.meta.requireAuth){
+    //验证是否登录,直接从router里获得vuex状态
+    if(router.app.$options.store.getters.getUserName){
+      next();
+    }else{
+      //next带参数表示跳转到另外的地址，进行新的导航
+      //返回首页
+      next({
+        path: '/',
+        query: {redirect: to.fullPath}
+      })
+    }
+  }else{
+    next();
+  }
+});
+
+export default router

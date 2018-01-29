@@ -17,7 +17,9 @@ router.post('/register',function(req,res,next){
     var userInfo = new User({
         username:username,
         email:email,
-        password:password
+        password:password,
+        //默认头像url
+        profileImgUrl:'https://i.loli.net/2018/01/29/5a6eeb8eab2f5.jpg'
     });
     //判断用户名是否存在
     var query = User.where({username:username});
@@ -113,6 +115,11 @@ router.post('/login',function(req,res,next){
                 //最大存活时间,单位:毫秒
                 maxAge: config.cookieMaxAge
               });
+              res.cookie('profile', doc.profileImgUrl, {
+                path: '/',
+                //最大存活时间,单位:毫秒
+                maxAge: config.cookieMaxAge
+              });
             //一天免登录
             }else{
               res.cookie('username', username, {
@@ -120,10 +127,16 @@ router.post('/login',function(req,res,next){
                 //最大存活时间,单位:毫秒
                 maxAge: config.cookieMaxAge / 30
               });
+              res.cookie('profile', doc.profileImgUrl, {
+                path: '/',
+                //最大存活时间,单位:毫秒
+                maxAge: config.cookieMaxAge / 30
+              });
             }
             res.json({
               status:1,
-              username:doc.username
+              username:doc.username,
+              profileImgUrl:doc.profileImgUrl
             })
           }
         //未找到用户
@@ -392,6 +405,56 @@ router.get('/hotbookmark',function(req,res,next){
         }
     })
 
+});
+
+//保存用户头像
+router.post('/saveProfile',function(req,res,next){
+  //获取用户名字
+  var username = req.cookies.username;
+  //用户头像url
+  var url = req.body.url;
+  //保存数据库
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+      doc.profileImgUrl = url;
+      doc.save(function(err,docSave){
+        if(err){
+          res.json({
+            status:-1
+          })
+        }else{
+          res.json({
+            status:1
+          })
+        }
+      });
+    }
+  })
+})
+
+//获取用户头像
+router.get('/getprofile',function(req,res,next){
+  //获取用户名字
+  var username = req.cookies.username;
+  //保存数据库
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+      res.json({
+        status:1,
+        imgUrl:doc.profileImgUrl
+      })
+    }
+  })
 });
 
 /* GET users listing. */

@@ -8,7 +8,8 @@
           <li v-if="!userNickName" class="li-hover"><a href="#" @click="showLogin">登录</a></li>
           <li v-if="userNickName" class="user-graph-li">
             <a class="user-graph">
-              <span class="user-profile"><img src="./../assets/icon/default-profile.png"></span>
+              <!--用户头像-->
+              <span class="user-profile"><img :src="userProfileImg"></span>
               <!--登录成功后的用户选项(个人信息，退出等)-->
               <div class="user-options">
                 <ul>
@@ -81,6 +82,8 @@
         },
         data(){
             return {
+            	  //头像url
+                profileImgUrl:"",
             	  //搜索input数据
                 searchInput:'',
             	  //添加书签分类模态框相关
@@ -121,6 +124,10 @@
           userNickName:function(){
             //这里模块里getters的方法会被注册为全局，不用加模块名字了
             return this.$store.getters.getUserName;
+          },
+          //用户头像
+          userProfileImg:function(){
+            return this.$store.getters.getUserProfileImg;
           },
           //搜索类型动态变化
           searchType:function(){
@@ -185,6 +192,8 @@
                 //清除成功
                 if(res.status === 1){
                   this.$store.commit('updateUserName','');
+                  //刷新页面
+                  window.location.reload();
                 }
               })
             },
@@ -192,9 +201,21 @@
             //后台查看是否存在cookie，若存在返回已经登录状态码
             checkLogin(){
             	  //首先直接检查浏览器cookie是否存在，如果发送后台验证则会有短暂的闪烁
-                var username = this.getCookie('username');
+                var username = this.getCookie('username'),
+                    profile = this.getCookie('profile');
             	  if(username){
                   this.$store.commit('updateUserName',username);
+                  //获取数据库中的头像url
+                  axios.get('/user/getprofile').then((resp)=>{
+                  	if(resp.data.status === 1) {
+                      //解码，防止url中的斜线被转义
+                      var profileDecoded = decodeURIComponent(resp.data.imgUrl);
+                      //更新用户头像
+                      this.$store.commit('updateUserProfile',profileDecoded);
+                      //提示用户更新成功
+
+                    }
+                  });
                 }
                 axios.get('user/checkLogin').then((resp)=>{
                     let status = resp.data.status,
@@ -203,6 +224,7 @@
                     if(status !== 1){
                         //设置vuex中用户名为空，达到退出登录的目的
                         this.$store.commit('updateUserName','');
+                        this.$store.commit('updateUserProfile','');
                     }
                 })
             },

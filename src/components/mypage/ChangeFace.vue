@@ -1,14 +1,16 @@
 <!--改变头像-->
 <template>
     <div class="wrap-inner">
+      <custom-cropper></custom-cropper>
     </div>
 </template>
 
 <script>
+  import CustomCropper from './CustomCropper'
 	export default {
 		name: 'changeFace',
     components: {
-      VueCoreImageUpload
+      CustomCropper
     },
     data(){
 			return{
@@ -22,6 +24,6 @@
 
 <style  type="text/css" scoped>
   .wrap-inner{
-    margin: 100px auto 0 auto;
+    margin: 30px auto;
   }
 </style>

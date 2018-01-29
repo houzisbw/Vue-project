@@ -7,6 +7,8 @@ var userSchema = new mongoose.Schema({
     username:String,
     password:String,
     email:String,
+    //头像url
+    profileImgUrl:String,
     //书签数组,元素是对象
     bookMark:[{
       url:String,
