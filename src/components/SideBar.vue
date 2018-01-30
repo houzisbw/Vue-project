@@ -1,5 +1,16 @@
 <template>
     <div class="side-bar">
+      <div class="hello">
+        <div class="hello-img" :style="{background:'url('+greetingBg + ') center center no-repeat'}">
+        </div>
+        <div class="hello-word" v-if="!isNicknameExist" >
+          <!--路由传递参数,目标组件接受参数，在mounted阶段,name是路由名字，在index里命名-->
+          {{greetingWord}}(❁´◡`❁)，<router-link :to="{name:'myPage',params:{tabName:'MyPageInfo',tabIndex:1}}" class="link-to">{{userNickname}}</router-link>
+        </div>
+        <div class="hello-word" :title="userNickname" v-else>
+          {{greetingWord}}(❁´◡`❁)，{{userNickname}}
+        </div>
+      </div>
       <ul class="first-level-ul">
         <li v-for="(item,index) in menuData" :class="['first-level',{'first-level-start':index===0}]">
           <a :class="['first-a',item.isActive ? item.menuOpenIcon : item.menuIcon]" @click="showSubMenu(index)">{{item.menuName}}</a>
@@ -21,16 +32,74 @@
 </template>
 
 <script>
+    import axios from 'axios'
+    import {eventBus} from './../eventBus'
     export default {
         name: 'app',
         methods:{
             showSubMenu:function(index){
               this.currentFirstLevelIndex = index;
               this.menuData[index].isActive = !this.menuData[index].isActive;
+            },
+            getUserInfo(){
+              //获取用户昵称
+              axios.get('/user/getUserInfo').then((resp)=>{
+                if(resp.data.status === 1){
+                  if(resp.data.nickname === ''){
+                    this.userNickname = '请填写昵称';
+                    this.isNicknameExist = false;
+                  }else{
+                    this.userNickname = resp.data.nickname;
+                  }
+
+                }else if(resp.data.status === 2){
+                  //未登录
+                  this.userNickname = '游客'
+                }
+              })
             }
+        },
+        mounted(){
+            this.getUserInfo();
+            eventBus.$on('MODIFY_GREETING_WORD',()=>{
+            	this.isNicknameExist = true;
+              this.getUserInfo();
+            })
+        },
+        computed:{
+
+        	  //问候语,根据时间来区分
+            greetingWord(){
+            	var date = new Date();
+            	var hours = date.getHours();
+            	if(hours>=18 || hours<=6){
+            		return '晚上好'
+              }else if(hours >=12 && hours <18){
+            		return '下午好'
+              }else{
+              	return '早上好'
+              }
+            },
+            //问候的背景图片
+            greetingBg(){
+              var date = new Date();
+              var hours = date.getHours();
+              if(hours >= 18 || hours<=6){
+              	return require('./../assets/icon/night.png')
+              }else{
+                return require('./../assets/icon/morning.png')
+              }
+            }
+            //用户昵称
+
+
         },
         data(){
             return{
+            	  //是否填写了昵称
+                isNicknameExist:true,
+            	  //用户昵称
+                userNickname:'',
                 //当前一级菜单index
                 currentFirstLevelIndex:0,
                 //菜单栏数据，每一个对象是一级菜单
@@ -158,8 +227,35 @@
     overflow-x: hidden;
     border-right:1px solid #e3e3e3;
     background-color: @sideBarBg;
+    .hello{
+      height:100px;
+      color: #666666;
+      font-size: 19px;
+      font-family: "Microsoft YaHei";
+      line-height: 100px;
+      .hello-img{
+        float:left;
+        height:100%;
+        width:90px;
+        //background: url('./../assets/icon/night.png') center center no-repeat;
+      }
+      .hello-word{
+        float:left;
+        height:100%;
+        width:180px;
+        font-size: 14px;
+        text-align: left;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        //background: url('./../assets/icon/rabbit.png') center center no-repeat;
+        background-size: 180px 100px;
+        .link-to{
+          color:#409eff;
+        }
+      }
+    }
     .first-level-ul{
-      margin-top: 100px;
       @firstLevelColor:#7f8c8d;
       @firstLevelHoverBgColor: #eeeeee;
       @firstLevelHoverWordColor: #fff;
@@ -267,6 +363,7 @@
           text-indent: 90px;
           -moz-box-sizing: border-box;
           -webkit-box-sizing: border-box;
+          font-family: "Microsoft YaHei";
           width:100%;
           font-size: 16px;
           padding:20px 30px 20px 20px;

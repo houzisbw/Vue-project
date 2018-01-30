@@ -457,6 +457,60 @@ router.get('/getprofile',function(req,res,next){
   })
 });
 
+//保存用户昵称和签名
+router.post('/saveUserInfo',function(req,res,next){
+  //用户昵称和签名
+  var nickname = req.body.nickname,
+      signature = req.body.signature;
+  //获取用户名字
+  var username = req.cookies.username;
+  //保存数据库
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+     doc.nickname = nickname;
+     doc.signature = signature;
+     doc.save(function(err,saveDoc){
+       res.json({
+         status:1
+       })
+     })
+    }
+  })
+})
+
+//获取用户昵称和签名
+router.get('/getUserInfo',function(req,res,next){
+  //获取用户名字
+  var username = req.cookies.username;
+  //保存数据库
+  var query = User.where({username:username});
+  query.findOne(function(err,doc){
+    if(err){
+      res.json({
+        status:-1
+      })
+    }else{
+      if(doc){
+        res.json({
+          nickname:doc.nickname,
+          signature:doc.signature,
+          status:1
+        })
+      //未登录
+      }else{
+        res.json({
+          status:2
+        })
+      }
+    }
+  })
+})
+
 /* GET users listing. */
 // router.get('/', function(req, res, next) {
 //   res.send('respond with a resource');

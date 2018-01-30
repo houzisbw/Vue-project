@@ -94,6 +94,8 @@ const router =  new Router({
     {
       path:'/myPage',
       component:MyPage,
+      //命名路由
+      name:'myPage',
       //需要登录
       meta:{
         requireAuth:true

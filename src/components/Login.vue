@@ -42,6 +42,7 @@
                        placeholder="密码"
                        v-model="password"
                        @keyup="cancelPasswordNotice"
+                       @keyup.enter = "login"
                 >
                 <div class="username-notice" v-show="passwordEmpty">
                   {{passwordNotice}}
@@ -99,7 +100,7 @@
         //密码提示信息
         passwordNotice:'',
         //是否自动登录
-        isAutoLogin:false
+        isAutoLogin:true
 
       }
     },

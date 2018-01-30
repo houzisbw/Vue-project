@@ -32,10 +32,19 @@
 
 <script>
   import ChangeFace from './../../components/mypage/ChangeFace'
+  import MyPageInfo from './../../components/mypage/MyPageInfo'
 	export default {
 		name: 'myPage',
     components:{
-      ChangeFace
+      ChangeFace,
+      MyPageInfo
+    },
+    mounted(){
+			//如果该参数存在才导航到该tab
+			if(this.$route.params.tabName){
+        this.currentTabComponent = this.$route.params.tabName;
+        this.currentIndex = parseInt(this.$route.params.tabIndex,10);
+      }
     },
     methods:{
 			//是否激活当前项
@@ -45,11 +54,13 @@
       //切换tab
       toggleTab(index,tabComponent){
       	this.currentIndex = index;
+      	this.currentTabComponent = tabComponent;
       }
     },
     data(){
 			return{
 				currentIndex:0,
+        //初始化tab
         currentTabComponent:'ChangeFace',
 				sideBarData:[
           {
@@ -61,17 +72,17 @@
           },
           {
             path:'/',
-            component:'',
+            component:'MyPageInfo',
             name:'我的信息',
-            iconPath:require('./../../assets/icon/mypage-profile.png'),
-            iconPathWhite:require('./../../assets/icon/mypage-profile-white.png')
+            iconPath:require('./../../assets/icon/mypage-info.png'),
+            iconPathWhite:require('./../../assets/icon/mypage-info-white.png')
           },
           {
             path:'/',
             component:'',
             name:'我的记录',
-            iconPath:require('./../../assets/icon/mypage-profile.png'),
-            iconPathWhite:require('./../../assets/icon/mypage-profile-white.png')
+            iconPath:require('./../../assets/icon/mypage-record.png'),
+            iconPathWhite:require('./../../assets/icon/mypage-record-white.png')
           }
         ]
       }

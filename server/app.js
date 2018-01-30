@@ -14,10 +14,13 @@ var music = require('./routes/hot_music');
 //双色球爬虫接口,定时执行
 var getLotteryData = require('./crawler/lotteryCrawler');
 schedule.scheduleJob('50 23 * * 2,4,7',getLotteryData.getLotteryDataWeekly)
+//网易云音乐爬虫接口
+var neteaseCrawler = require('./crawler/musicCrawler');
+schedule.scheduleJob('10 12 * * 4',neteaseCrawler.getHotListSingerName)
+schedule.scheduleJob('20 12 * * 4',neteaseCrawler.getSongData)
 
+//express实例
 var app = express();
-
-
 
 //在app.js中链接数据库,没有密码的形式,最后的参数是数据库名称,注意有用户名和密码的话必须加?authSource=admin,否则连接失败(生产环境下)
 //这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的

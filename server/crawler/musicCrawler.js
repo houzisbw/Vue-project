@@ -297,9 +297,5 @@ function getHotListSingerName(){
 }
 
 
-
-
-
-//getHotListSingerName()
-getSongData();
-
+module.exports.getHotListSingerName = getHotListSingerName;
+module.exports.getSongData = getSongData;

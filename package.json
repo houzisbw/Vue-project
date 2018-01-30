@@ -28,6 +28,7 @@
     "node-schedule": "^1.2.5",
     "nodejieba": "^2.2.5",
     "phantom": "^4.0.12",
+    "phantomjs-prebuilt": "^2.1.16",
     "selenium-webdriver": "^4.0.0-alpha.1",
     "superagent": "^3.8.2",
     "vue": "^2.5.2",

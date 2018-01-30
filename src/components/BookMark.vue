@@ -548,8 +548,9 @@
       }
       .grid-show{
         background: url('./../assets/icon/bookmark-show-type-grid.png') center center no-repeat;
-        background-size: 25px 25px;
+        //background: url('./../assets/sprite/css_sprites.png') -10px -10px no-repeat;
         border-radius: 0 5px 5px 0;
+        background-size: 25px 25px;
       }
       .line-show{
         background: url('./../assets/icon/bookmark-show-type-line.png') center center no-repeat;

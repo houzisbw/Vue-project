@@ -5,7 +5,8 @@ h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr,
 acronym, address, big, cite, code, dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend {
   vertical-align: baseline;
-  font-family: inherit;
+  /*指定字体样式，否则不同浏览器不同显示*/
+  font-family: "Microsoft YaHei";
   font-weight: inherit;
   font-style: inherit;
   font-size: 100%;

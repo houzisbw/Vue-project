@@ -432,7 +432,7 @@
     }
     .banner-word{
       img{
-         width:100px;
+         width:150px;
          height:@bannerHeight;
       }
     }

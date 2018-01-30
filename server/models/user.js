@@ -9,6 +9,10 @@ var userSchema = new mongoose.Schema({
     email:String,
     //头像url
     profileImgUrl:String,
+    //昵称
+    nickname:String,
+    //签名
+    signature:String,
     //书签数组,元素是对象
     bookMark:[{
       url:String,
