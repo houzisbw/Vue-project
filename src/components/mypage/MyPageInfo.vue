@@ -47,12 +47,12 @@
     },
     methods:{
     	saveInfo(){
-    		//检查昵称和签名是否合法
-        if(this.nickname === '' || this.nickname.length>10){
+    		//检查昵称和签名是否合法,注意这里不能用this.nickname === '',因为有可能是undefined，
+        if(!this.nickname || this.nickname.length>10){
           eventBus.$emit('CONFIRM_DIALOG','昵称长度不合法~请重新输入');
           return;
         }
-        if(this.signature === '' || this.signature.length>20){
+        if(!this.signature || this.signature.length>20){
           eventBus.$emit('CONFIRM_DIALOG','签名长度不合法~请重新输入');
           return;
         }

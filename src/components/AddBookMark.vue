@@ -47,7 +47,7 @@
           <div class="line-wrap-right">
             <div class="title-screen-shot-wrap" :class="{'title-screen-shot-isloading':isTitleScreenShotLoading}">
               <span :class="{'title-screen-shot-word':isTitleScreenShotLoading}" >网站会自动截屏并显示</span>
-              <img :src="'static/bookMarkImages/'+titleScreenShotName" v-if="titleScreenShotName !== ''">
+              <img :src="'static/bookmarkImages/'+titleScreenShotName" v-if="titleScreenShotName !== ''">
             </div>
           </div>
         </div>

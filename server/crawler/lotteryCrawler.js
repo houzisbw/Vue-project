@@ -5,15 +5,16 @@
 var mongoose = require('mongoose')
 var schedule = require('node-schedule')
 //这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
-mongoose.connect('mongodb://127.0.0.1:27017/flash')
-//监听:成功
-mongoose.connection.on("connected",function(){
-  console.log('数据库链接成功');
-})
-//监听:失败
-mongoose.connection.on("error",function(){
-  console.log('数据库链接失败');
-})
+// mongoose.connect('mongodb://127.0.0.1:27017/flash')
+// //监听:成功
+// mongoose.connection.on("connected",function(){
+//   console.log('数据库链接成功');
+// })
+// //监听:失败
+// mongoose.connection.on("error",function(){
+//   console.log('数据库链接失败');
+// })
+
 //双色球数据模型
 var Lottery = require('./../models/Crawler/lottery')
 //爬虫所需要的插件,superagent用于获取网页,cheerio用于使用css选择器读取网页数据,eventproxy用于同步请求,类似于promise.all

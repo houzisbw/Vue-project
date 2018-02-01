@@ -12,7 +12,8 @@ var http = require('http');
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '3000');
+//这里的默认3000端口已经被shoppingmall项目所用，所以得改为4000
+var port = normalizePort(process.env.PORT || '4000');
 app.set('port', port);
 
 /**

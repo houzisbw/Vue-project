@@ -24,6 +24,7 @@
                 <input type="text"
                        id="login-username"
                        placeholder="用户名"
+                       autocomplete="off"
                        v-model="username"
                        @keyup="cancelUsernameNotice"
                        spellcheck="false"
@@ -41,6 +42,7 @@
                        id="login-password"
                        placeholder="密码"
                        v-model="password"
+                       autocomplete="new-password"
                        @keyup="cancelPasswordNotice"
                        @keyup.enter = "login"
                 >

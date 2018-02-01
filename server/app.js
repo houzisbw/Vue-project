@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var schedule = require('node-schedule');
-
+var ejs = require('ejs')
 var index = require('./routes/index');
 var users = require('./routes/users');
 var phantom = require('./routes/phantom');
@@ -21,24 +21,32 @@ schedule.scheduleJob('20 12 * * 4',neteaseCrawler.getSongData)
 
 //express实例
 var app = express();
+//跨域设置
+// app.all('*', function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "X-Requested-With");
+//   res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
+//   res.header("X-Powered-By",' 3.2.1')
+//   res.header("Content-Type", "application/json;charset=utf-8");
+//   next();
+// });
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.engine('.html',ejs.__express);
+app.set('view engine', 'html');
 
 //在app.js中链接数据库,没有密码的形式,最后的参数是数据库名称,注意有用户名和密码的话必须加?authSource=admin,否则连接失败(生产环境下)
 //这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
-mongoose.connect('mongodb://127.0.0.1:27017/flash')
+//注意数据库需要权限访问，所以得加上密码账号
+mongoose.connect('mongodb://root:Sbw66620116@127.0.0.1:27017/flash?authSource=admin')
 //监听:成功
 mongoose.connection.on("connected",function(){
-  console.log('数据库链接成功');
+  console.log('mongodb connection success');
 })
 //监听:失败
 mongoose.connection.on("error",function(){
-  console.log('数据库链接失败');
+  console.log('mongodb connection fail');
 })
-
-
-// view engine setup
-//app.set('views', path.join(__dirname, 'views'));
-//app.engine('.html',ejs.__express);
-//app.set('view engine', 'html');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -46,7 +54,8 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+//这里views里面就存放前端的文件，很重要,express通过访问views里面的index.html来访问页面
+app.use(express.static(path.join(__dirname, 'views')));
 
 app.use('/', index);
 app.use('/user', users);

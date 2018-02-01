@@ -41,7 +41,7 @@
                   </div>
                   <!--书签截图-->
                   <div class="mark-screen-shot"
-                       :style="{background:'url(static/bookMarkImages/'+item.screenShotName + ') center center no-repeat',
+                       :style="{background:'url(static/bookmarkImages/'+item.screenShotName + ') center center no-repeat',
                               backgroundSize:'cover'}"
                        @click="jumpToNewPage(item.url)"
                   >

@@ -45,7 +45,8 @@
               //获取用户昵称
               axios.get('/user/getUserInfo').then((resp)=>{
                 if(resp.data.status === 1){
-                  if(resp.data.nickname === ''){
+                	//注意这里必须是非，不能是===''，因为初始为undefined
+                  if(!resp.data.nickname){
                     this.userNickname = '请填写昵称';
                     this.isNicknameExist = false;
                   }else{

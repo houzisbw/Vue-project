@@ -13,17 +13,17 @@ var http = require("http"),
 var HotMusicList = require('./../models/Crawler/hotMusicList');
 var HotMusicLyric = require('./../models/Crawler/hotMusicLyric');
 //链接数据库
-var mongoose = require('mongoose')
-//这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
-mongoose.connect('mongodb://127.0.0.1:27017/flash')
-//监听:成功
-mongoose.connection.on("connected",function(){
-  console.log('数据库链接成功');
-})
-//监听:失败
-mongoose.connection.on("error",function(){
-  console.log('数据库链接失败');
-})
+// var mongoose = require('mongoose')
+// //这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
+// mongoose.connect('mongodb://127.0.0.1:27017/flash')
+// //监听:成功
+// mongoose.connection.on("connected",function(){
+//   console.log('数据库链接成功');
+// })
+// //监听:失败
+// mongoose.connection.on("error",function(){
+//   console.log('数据库链接失败');
+// })
 
 const {Builder, By, Key, until} = require('selenium-webdriver');
 

@@ -126,7 +126,8 @@
           var data = new FormData();
           data.append('smfile', fileClipped);
           //这里的data没有大括号,api是在config/index里面设置的代理，跨域访问
-          axios.post('/api',data).then((resp)=>{
+          //生产环境跨域不能像上面那样写
+          axios.post('https://sm.ms/api/upload',data).then((resp)=>{
           	  //注意这里有2个data，第一个是axios的data，第二个是图床网站的data属性
               //获取图片的url,存入数据库
               var imgUrl = resp.data.data.url;
