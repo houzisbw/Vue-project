@@ -122,7 +122,12 @@ function getSongData(){
   var hotMusicUrl = 'http://music.163.com/discover/toplist?id=3778678';
   //selenium测试
   var webdriver = require('selenium-webdriver'); //导入selenium 库
-  var driver = new webdriver.Builder().forBrowser('chrome').build(); //创建一个chrome 浏览器实例
+  console.log('out frame----------------------------------')
+
+  //无头模式:注意在linux无界面服务器上必须做如下配置才能启动爬虫，特别注意no-sandbox参数，否则报错
+  const chromeCapabilities = webdriver.Capabilities.chrome();
+  chromeCapabilities.set('chromeOptions', {args: ['--headless','no-sandbox']});
+  var driver = new webdriver.Builder().forBrowser('chrome').withCapabilities(chromeCapabilities).build(); //创建一个chrome 浏览器实例
   //里面的所有方法都是返回promise，尤其注意这一点
   driver.get(hotMusicUrl).then(()=>{
     //进入iframe中,参数是iframe的id
@@ -130,6 +135,7 @@ function getSongData(){
       //获取歌曲链接
       var txt = driver.findElements(By.css('.txt a'));
       var songLinkArray = [];
+      console.log('in frame----------------------------------')
       txt.then((array)=>{
         var songNum = array.length;
         var cnt = 0;
@@ -295,7 +301,6 @@ function getHotListSingerName(){
     })
   })
 }
-
 
 module.exports.getHotListSingerName = getHotListSingerName;
 module.exports.getSongData = getSongData;
