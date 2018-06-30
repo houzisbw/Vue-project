@@ -1,29 +1,31 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+//已通过cdn引入，现在去掉import
+//import Vue from 'vue'
+//import Router from 'vue-router'
 //书签
-import BookMark from '@/components/BookMark'
 import AddBookMark from '@/components/AddBookMark'
 import User from  '@/components/User'
-import HotBookMark from '@/components/HotBookMark'
-import ImportBookMark from '@/components/ImportBookMark'
-import Default from '@/components/Default'
+//异步组件，路由懒加载
+const BookMark = resolve => require(['@/components/BookMark'],resolve);
+const HotBookMark = resolve => require(['@/components/HotBookMark'],resolve);
+const ImportBookMark = resolve => require(['@/components/ImportBookMark'],resolve);
+const Default = resolve => require(['@/components/Default'],resolve);
 //双色球
-import Lottery from '@/components/lottery/Lottery'
-import SmartChoose from '@/components/lottery/SmartChoose'
-import LotteryHistory from '@/components/lottery/LotteryHistory'
-import LotteryPrizeRule from '@/components/lottery/LotteryPrizeRule'
+const Lottery = resolve => require(['@/components/lottery/Lottery'],resolve);
+const SmartChoose = resolve => require(['@/components/lottery/SmartChoose'],resolve);
+const LotteryHistory = resolve => require(['@/components/lottery/LotteryHistory'],resolve);
+const LotteryPrizeRule = resolve => require(['@/components/lottery/LotteryPrizeRule'],resolve);
 //百度地图
-import BaiduMap from '@/components/map/BaiduMap'
-import BaiduMapHouseRenting from '@/components/map/BaiduMapHouseRenting'
+const BaiduMap = resolve => require(['@/components/map/BaiduMap'],resolve);
+const BaiduMapHouseRenting = resolve => require(['@/components/map/BaiduMapHouseRenting'],resolve);
 //网易云音乐
-import Music from '@/components/music/Music'
-import HotMusicAnalysis from '@/components/music/HotMusicAnalysis'
+const Music = resolve => require(['@/components/music/Music'],resolve);
+const HotMusicAnalysis = resolve => require(['@/components/music/HotMusicAnalysis'],resolve);
 //个人主页
-import MyPage from '@/components/mypage/MyPage'
+const MyPage = resolve => require(['@/components/mypage/MyPage'],resolve);
 
-Vue.use(Router)
 
-const router =  new Router({
+Vue.use(VueRouter)
+const router =  new VueRouter({
   routes: [
     //user路由，里面子路由,这里User单独是一个组件，里面放置<router-view>，用于存放子组件
     {

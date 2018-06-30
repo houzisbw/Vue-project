@@ -4,10 +4,17 @@
 var express = require('express');
 var phantom = require('phantom');
 var path = require('path');
+var fs = require('fs');
 var router = express.Router();
 //引入配置信息
 var config = require('./../config/config');
 
+function base64_encode(file) {
+  // read binary data
+  var bitmap = fs.readFileSync(file);
+  // convert binary data to base64 encoded string
+  return new Buffer(bitmap).toString('base64');
+}
 //从url获取图片名字，截取其中的数字和字母，目的是为了只生成一张图片
 function getPictureNameFromUrl(url){
   var picName = '';
@@ -64,10 +71,12 @@ router.post('/getTitle',function(req,res,next){
         //截图要延迟，因为立即打开网页截图内容会加载不全
         setTimeout(function(){
           //图片截取函数
+          console.log('render start!!');
           sitepage.render(output, {format: 'png', quality: '0'});
           pageScreenShotName = imgName;
           //延迟响应前端，因为立即返回的话截图还不存在，前端无法显示图片
           setTimeout(function(){
+            console.log('res json')
             res.json({
               pageScreenShotName:pageScreenShotName,
               pageTitle:content

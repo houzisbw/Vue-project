@@ -12,24 +12,24 @@ var http = require("http"),
 //引入数据库
 var HotMusicList = require('./../models/Crawler/hotMusicList');
 var HotMusicLyric = require('./../models/Crawler/hotMusicLyric');
+
+//本地测试用
 //链接数据库
 // var mongoose = require('mongoose')
 // //这个用户是在admin数据库下创建的，可以对所有数据库读写，而其他数据库只能读写自己的
-// mongoose.connect('mongodb://127.0.0.1:27017/flash')
+// //mongoose.connect('mongodb://127.0.0.1:27017/flash')
 // //监听:成功
 // mongoose.connection.on("connected",function(){
-//   console.log('数据库链接成功');
+//   console.log('爬虫测试---数据库链接成功');
 // })
 // //监听:失败
 // mongoose.connection.on("error",function(){
-//   console.log('数据库链接失败');
+//   console.log('爬虫测试---数据库链接失败');
 // })
 
 const {Builder, By, Key, until} = require('selenium-webdriver');
-
 //重要
 require('chromedriver'); //导入chrome浏览器 driver
-
 //分词处理
 function splitWordByJieba(wordsStr){
   //为啥stopWord不起作用
@@ -70,7 +70,6 @@ function splitWordByJieba(wordsStr){
   //先删除所有的歌词
   HotMusicLyric.remove({},function(err,docs){
     for(var i=0;i<topN;i++){
-      //console.log(sortList[i].word+' '+sortList[i].cnt)
       var hotMusicLyric = new HotMusicLyric({
         word:sortList[i].word,
         num:sortList[i].cnt
@@ -122,20 +121,19 @@ function getSongData(){
   var hotMusicUrl = 'http://music.163.com/discover/toplist?id=3778678';
   //selenium测试
   var webdriver = require('selenium-webdriver'); //导入selenium 库
-  console.log('out frame----------------------------------')
-
   //无头模式:注意在linux无界面服务器上必须做如下配置才能启动爬虫，特别注意no-sandbox参数，否则报错
   const chromeCapabilities = webdriver.Capabilities.chrome();
   chromeCapabilities.set('chromeOptions', {args: ['--headless','no-sandbox']});
+  //出问题的地方,原因是npm下载包不完全导致找不到路径
   var driver = new webdriver.Builder().forBrowser('chrome').withCapabilities(chromeCapabilities).build(); //创建一个chrome 浏览器实例
   //里面的所有方法都是返回promise，尤其注意这一点
   driver.get(hotMusicUrl).then(()=>{
+    console.log('here')
     //进入iframe中,参数是iframe的id
     driver.switchTo().frame('g_iframe').then(()=>{
       //获取歌曲链接
       var txt = driver.findElements(By.css('.txt a'));
       var songLinkArray = [];
-      console.log('in frame----------------------------------')
       txt.then((array)=>{
         var songNum = array.length;
         var cnt = 0;
@@ -158,9 +156,7 @@ function getSongData(){
                     //请求歌词,结果发现还是有promise被reject，还有些歌是纯音乐,无歌词
                     //无法判断何时结束,有时候所有请求都会被拒绝，奇了怪,得多重复几次，周四的时候
                     //then的第二个参数是拒绝函数，第一个是决议函数
-                    axios.get(songUrl).then(
-                    //被resolve
-                      (result)=>{
+                    axios.get(songUrl).then((result)=>{
                       var rawData = result.data.lrc.lyric;
                       //获取格式化后的歌词
                       var formattedSongData = formatSongData(rawData);
@@ -200,8 +196,10 @@ function getHotListSingerName(){
   var hotMusicUrl = 'http://music.163.com/discover/toplist?id=3778678';
   //selenium测试
   var webdriver = require('selenium-webdriver'); //导入selenium 库
-  var driver = new webdriver.Builder().forBrowser('chrome').build(); //创建一个chrome 浏览器实例
   //里面的所有方法都是返回promise，尤其注意这一点
+  const chromeCapabilities = webdriver.Capabilities.chrome();
+  chromeCapabilities.set('chromeOptions', {args: ['--headless','no-sandbox']});
+  var driver = new webdriver.Builder().forBrowser('chrome').withCapabilities(chromeCapabilities).build(); //创建一个chrome 浏览器
   driver.get(hotMusicUrl).then(()=>{
     //进入iframe中,参数是iframe的id
     driver.switchTo().frame('g_iframe').then(()=>{
@@ -224,6 +222,7 @@ function getHotListSingerName(){
                 singerNameObj[r] = 1;
               }
               //全部获取完成
+              console.log(cnt,singerNum)
               if(cnt === singerNum){
                 //获取歌手歌曲名字
                 driver.findElements(By.css('.txt b')).then((songArray)=>{
@@ -284,23 +283,31 @@ function getHotListSingerName(){
                                     hotMusicList.save();
                                   }
                                 }
+                                console.log('爬虫爬取热门歌手列表完成')
                                 //退出浏览器
                                 driver.quit();
                               })
                             })
                         }
                       })
-                    },5*i);
+                    },20*i);
                   }
                 });
               }
             })
-          },i*5)
+          },i*20)
         }
       })
     })
   })
 }
+
+//测试
+//getSongData()
+//getHotListSingerName()
+
+
+
 
 module.exports.getHotListSingerName = getHotListSingerName;
 module.exports.getSongData = getSongData;

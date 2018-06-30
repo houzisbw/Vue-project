@@ -82,6 +82,7 @@
 
 <script>
   import {eventBus} from './../../eventBus'
+  //echarts通过cdn引入
   import echarts from 'echarts'
   import axios from 'axios'
   import d3Cloud from 'd3-cloud'

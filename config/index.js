@@ -11,18 +11,18 @@ module.exports = {
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {
-      //服务端是在3000端口上的，这里做一个代理，访问/users/*的请求都会被代理到http://localhost:3000上
+      //服务端是在4000端口上的，这里做一个代理，访问/users/*的请求都会被代理到http://localhost:4000上
       '/user/*':{
-        target:'http://localhost:3000'
+        target:'http://localhost:4000'
       },
       '/phantom/*':{
-        target:'http://localhost:3000'
+        target:'http://localhost:4000'
       },
       '/lottery/*':{
-        target:'http://localhost:3000'
+        target:'http://localhost:4000'
       },
       '/music/*':{
-        target:'http://localhost:3000'
+        target:'http://localhost:4000'
       },
       //图床网站跨域设置
       '/api': {
@@ -71,13 +71,13 @@ module.exports = {
     assetsRoot: path.resolve(__dirname, '../dist'),
     assetsSubDirectory: 'static',
     //这里记得去掉/
-    assetsPublicPath: '',
+    assetsPublicPath: './',
 
     /**
      * Source Maps
      */
 
-    productionSourceMap: true,
+    productionSourceMap: false,
     // https://webpack.js.org/configuration/devtool/#production
     devtool: '#source-map',
 

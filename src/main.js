@@ -4,7 +4,9 @@
 //poly-fill,用于兼容处理，ie，safari,必须放在第一行
 import 'babel-polyfill'
 
-import Vue from 'vue'
+//cdn引入了Vue(此时Vue是全局变量),这里去掉
+//import Vue from 'vue'
+
 import App from './App'
 import router from './router'
 //导入vuex状态管理器
