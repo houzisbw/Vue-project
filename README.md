@@ -1,5 +1,5 @@
 # 个人练手网站
-Vue+Vuex+Vue-Router,后台是MongoDB+Express
+Vue+Vuex+Vue-Router,后台是MongoDB+Express，服务器在阿里云
 # 主要模块
 (1) 个人书签功能<br>
 (2) 双色球历史查询和智能选号功能<br>
